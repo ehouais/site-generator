@@ -1,0 +1,15 @@
+{
+  "name": "ehouais.github.io",
+  "version": "1.0.0",
+  "description": "Github user pages generator",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "gen": "node ./gen.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "rimraf": "^2.6.1"
+  }
+}

@@ -1,0 +1,102 @@
+<?php
+// * $cdnroot
+// * $stylesheets[]
+// * $config
+// * $layout
+// * $data
+// * $type
+?>
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
+        <script src="<?php print $cdnroot?>/require.js/2.3.2/require.min.js"></script>
+<?php foreach($stylesheets as $uri) { ?>
+        <link href="<?php print $uri ?>" rel="stylesheet">
+<?php } ?>
+        <link href="README.md" rel="doc">
+        <style>
+            html, body {
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+                background-color: #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <script>
+            var config = <?php print $config ?>;
+            config.config = {text: {useXhr: function(url, protocol, hostname, port) {
+                return true; // force use of CORS for text dependencies
+            }}};
+            require.config(config);
+
+            var layout = '<?php print $layout ?>';
+            var data = decodeURIComponent('<?php print $data ?>');
+
+            require(['chart'], function(Chart) {
+                var chart,
+                    parse = function(str, uri) {
+<?php if (in_array($type, ["vbars", "hbars", "pie", "lines", "map"])) { ?>
+                        require(['datatable'], function(DataTable) {
+                            var lines = (uri ? str : str.replace(/;/g, '\n')).split('\n'),
+                                header = lines.shift(),
+                                types = [<?php if ($type == "lines") { ?>'date'<?php } elseif ($type == "map") { ?>'numeric', 'numeric', 'text'<?php } else { ?>'text'<?php } ?>];
+
+                            chart.update({
+                                cols: header.split(',').map(function(cell) {
+                                    return {label: cell};
+                                }),
+                                rows: DataTable.dataFromCsv(lines.join('\n'), types)
+                            });
+                        });
+<?php } elseif ($type == "diagram" || $type == "timeline") { ?>
+                        if (uri) data = data.replace(/\n|\r/g, '');
+                        require(['ext_parser'], function(parser) {
+                            try {
+                                var data = parser.parse(str);
+                            } catch(e) {
+                                console.log('Parser error: '+e.message);
+                            }
+                            chart.update(data);
+                        });
+<?php } ?>
+                    },
+                    params = {margin: 0.05};
+
+<?php if ($type == "vbars" || $type == "hbars") { ?>
+                if (layout) {
+                    (function(str) {
+                        var tokens = str.split(':'),
+                            cols = tokens[1].split(',');
+
+                        params.labels = +tokens[0]-1;
+                        params.grouping = cols.map(function(stack) {
+                            return stack.split('+').map(function(index) {
+                                return +index-1;
+                            });
+                        });
+                    })(layout);
+                }
+<?php } elseif ($type == "lines") { ?>
+                params.offset = layout ? +layout : 0;
+<?php } ?>
+
+                chart = Chart(document.body, params);
+
+                window.addEventListener('resize', chart.resize);
+                if (data.match(/^(https?|data):/)) {
+                    require(['http'], function(Http) {
+                        Http.get(data, {}, function(data) {
+                            parse(data, true);
+                        }, true);
+                    });
+                } else {
+                    parse(data);
+                }
+            });
+        </script>
+    </body>
+</html>
