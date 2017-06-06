@@ -1,20 +1,17 @@
-<?php
-// * $cdnroot
-// * $stylesheets[]
-// * $config
-// * $layout
-// * $data
-// * $type
-?>
+<%#
+stylesheets[]
+config
+type
+%>
 <!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
-        <script src="<?php print $cdnroot?>/require.js/2.3.2/require.min.js"></script>
-<?php foreach($stylesheets as $uri) { ?>
-        <link href="<?php print $uri ?>" rel="stylesheet">
-<?php } ?>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/require.js/2.3.3/require.min.js"></script>
+<% stylesheets.forEach(function(url) { -%>
+        <link href="<%= url %>" rel="stylesheet">
+<% }); -%>
         <link href="README.md" rel="doc">
         <style>
             html, body {
@@ -27,23 +24,32 @@
     </head>
     <body>
         <script>
-            var config = <?php print $config ?>;
+            var config = <%- JSON.stringify(config) %>;
             config.config = {text: {useXhr: function(url, protocol, hostname, port) {
                 return true; // force use of CORS for text dependencies
             }}};
             require.config(config);
 
-            var layout = '<?php print $layout ?>';
-            var data = decodeURIComponent('<?php print $data ?>');
+            var params = (function(uri) {
+                    var a = document.createElement('a');
+                    a.href = uri;
+                    return a.search.replace(/^\?/, '').split('&').reduce(function(obj, pair) {
+                        var tokens = pair.split('=');
+                        obj[tokens[0]] = decodeURIComponent(tokens[1]);
+                        return obj;
+                    }, {});
+                })(window.location.href);
+            var layout = params.layout;
+            var data = params.data;
 
             require(['chart'], function(Chart) {
                 var chart,
                     parse = function(str, uri) {
-<?php if (in_array($type, ["vbars", "hbars", "pie", "lines", "map"])) { ?>
+<% if (['vbars', 'hbars', 'pie', 'lines', 'map'].indexOf(type) != -1) { %>
                         require(['datatable'], function(DataTable) {
                             var lines = (uri ? str : str.replace(/;/g, '\n')).split('\n'),
                                 header = lines.shift(),
-                                types = [<?php if ($type == "lines") { ?>'date'<?php } elseif ($type == "map") { ?>'numeric', 'numeric', 'text'<?php } else { ?>'text'<?php } ?>];
+                                types = [<% if (type == 'lines') { %>'date'<% } else if (type == 'map') { %>'numeric', 'numeric', 'text'<% } else { %>'text'<% } %>];
 
                             chart.update({
                                 cols: header.split(',').map(function(cell) {
@@ -52,7 +58,7 @@
                                 rows: DataTable.dataFromCsv(lines.join('\n'), types)
                             });
                         });
-<?php } elseif ($type == "diagram" || $type == "timeline") { ?>
+<% } else if (type == 'diagram' || type == 'timeline') { %>
                         if (uri) data = data.replace(/\n|\r/g, '');
                         require(['ext_parser'], function(parser) {
                             try {
@@ -62,11 +68,11 @@
                             }
                             chart.update(data);
                         });
-<?php } ?>
+<% } %>
                     },
                     params = {margin: 0.05};
 
-<?php if ($type == "vbars" || $type == "hbars") { ?>
+<% if (type == 'vbars' || type == 'hbars') { -%>
                 if (layout) {
                     (function(str) {
                         var tokens = str.split(':'),
@@ -80,9 +86,9 @@
                         });
                     })(layout);
                 }
-<?php } elseif ($type == "lines") { ?>
+<% } else if (type == 'lines') { %>
                 params.offset = layout ? +layout : 0;
-<?php } ?>
+<% } -%>
 
                 chart = Chart(document.body, params);
 

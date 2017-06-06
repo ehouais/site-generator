@@ -1,0 +1,44 @@
+<%#
+stylesheets
+config
+%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/require.js/2.3.2/require.min.js"></script>
+<% stylesheets.forEach(function(url) { -%>
+        <link href="<%= url %>" rel="stylesheet">
+<% }); -%>
+    </head>
+    <body>
+        <script>
+            var config = <%- JSON.stringify(config) %>;
+            config.config = {text: {useXhr: function(url, protocol, hostname, port) {
+                return true; // force use of CORS for text dependencies
+            }}};
+            require.config(config);
+
+            require(['jquery', 'sjcl', 'webviews', 'renderer'], function($, sjcl, Webviews, renderer) {
+                Webviews.data().bind(function(data, type) {
+                    if (type == 'application/json') {
+                        data = JSON.parse(data);
+                    } else if (type == 'text/csv') {
+                        var rows = data.trim().split('\n').map(function(row) {
+                                return row.split(',').map(function(value) {
+                                    return value.trim();
+                                });
+                            });
+                        // First row is considered header
+                        data = {
+                            cols: rows.shift().map(function(value) { return {label: value}; }),
+                            rows: rows
+                        };
+                    }
+                    renderer.update(data);
+                });
+            });
+        </script>
+    </body>
+</html>
