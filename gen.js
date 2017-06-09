@@ -5,14 +5,27 @@ var ejs = require('ejs');
 var ncp = require('ncp').ncp;
 var request = require('request');
 
+var siteDir = '../ehouais.github.io';
+
 var chartTemplate = 'chart-template.ejs';
+var destChartsDir = siteDir+'/demos/charts';
+
 var webviewTemplate = 'webview-template.ejs';
+var destWebviewsDir = siteDir+'/demos/webviews';
+
 var js1kTemplate = 'js1k-template.ejs';
-var destChartsDir = '../ehouais.github.io/demos/charts';
-var destWebviewsDir = '../ehouais.github.io/demos/webviews';
-var destJs1kDir = '../ehouais.github.io/demos/js1k';
-var destPlaygroundDir = '../ehouais.github.io/demos/playground';
-var destPostsDir = '../ehouais.github.io/posts';
+var destJs1kDir = siteDir+'/demos/js1k';
+
+var destPlaygroundDir = siteDir+'/playground';
+
+var destPostsDir = siteDir+'/posts';
+
+var dbTemplate = 'db.ejs';
+var dbGithubUser = 'ehouais';
+var githubPwdStorageId = 'githubPwd';
+var dbGistId = '01105aa4337d5eb0be39d6501994bc99';
+var destDbFile = siteDir+'/db.html';
+var cipherKeyStorageId = 'cipherKey';
 
 var rmdirThen = function(dir, then) {
         var next = function() {
@@ -39,12 +52,13 @@ var cdnjs = function(path) {
         return '//cdnjs.cloudflare.com/ajax/libs'+path;
     };
 var rawgit = function(path) {
-        return '//cdn.rawgit.com/ehouais'+path;
+        return '//cdn.rawgit.com/'+path;
     };
-var chartslib = '/charts/v0.3.1';
-var webviewslib = '/webviews/v0.3.0';
-var js1klib = '/js1k/6470cd8';
-var datalib = '/js-data-libs/v0.3.0';
+var chartslib = 'ehouais/charts/v0.3.1';
+var webviewslib = 'ehouais/webviews/v0.3.0';
+var js1klib = 'ehouais/js1k/6470cd8';
+var datalib = 'ehouais/js-data-libs/v0.3.0';
+var uiutilslib = 'ehouais/js-ui-utils/0.2.0';
 
 rmdirThen(destChartsDir, function() {
     var libs = {
@@ -53,38 +67,42 @@ rmdirThen(destChartsDir, function() {
             'snap.svg': {url: cdnjs('/snap.svg/0.5.1/snap.svg-min')},
             timescale: {url: rawgit(chartslib+'/timescale')},
             twopassresize: {url: rawgit(chartslib+'/twopassresize')},
-            datatable: {url: rawgit(datalib+'/datatable')},
+            datatable: {url: '//rawgit.com/ehouais/js-data-libs/dev/datatable'},
+            'gist-fs': {url: '//rawgit.com/ehouais/js-data-libs/dev/gist-fs'},
+            'session-value': {url: '//rawgit.com/ehouais/js-data-libs/dev/session-value'},
+            crypto: {url: '//rawgit.com/ehouais/js-data-libs/dev/crypto'},
+            sjcl: {url: cdnjs('/sjcl/1.0.6/sjcl.min'), exports: 'sjcl'},
         };
     var charts = {
             diagram: {
                 stylesheets: ['../condensed-font.css'],
-                requirements: ['snap.svg', 'twopassresize'],
+                requirements: ['snap.svg', 'twopassresize', 'crypto', 'sjcl', 'gist-fs', 'session-value'],
                 exports: {ext_parser: 'parser'}
             },
             hbars: {
                 stylesheets: ['../condensed-font.css', 'default.css'],
-                requirements: ['d3', 'twopassresize', 'datatable']
+                requirements: ['d3', 'twopassresize', 'datatable', 'crypto', 'sjcl', 'gist-fs', 'session-value']
             },
             lines: {
                 stylesheets: ['../condensed-font.css', 'default.css'],
-                requirements: ['d3', 'timescale', 'twopassresize', 'datatable']
+                requirements: ['d3', 'timescale', 'twopassresize', 'datatable', 'crypto', 'sjcl', 'gist-fs', 'session-value']
             },
             map: {
                 stylesheets: ['/leaflet/1.0.3/leaflet.css', 'default.css'],
-                requirements: ['leaflet', 'datatable']
+                requirements: ['leaflet', 'datatable', 'crypto', 'sjcl', 'gist-fs', 'session-value']
             },
             pie: {
                 stylesheets: ['../condensed-font.css', 'default.css'],
-                requirements: ['d3', 'twopassresize', 'datatable']
+                requirements: ['d3', 'twopassresize', 'datatable', 'crypto', 'sjcl', 'gist-fs', 'session-value']
             },
             timeline: {
                 stylesheets: ['../condensed-font.css', 'default.css'],
-                requirements: ['d3', 'timescale', 'twopassresize'],
+                requirements: ['d3', 'timescale', 'twopassresize', 'crypto', 'sjcl', 'gist-fs', 'session-value'],
                 exports: {ext_parser: 'parser'}
             },
             vbars: {
                 stylesheets: ['../condensed-font.css', 'default.css'],
-                requirements: ['d3', 'twopassresize', 'datatable']
+                requirements: ['d3', 'twopassresize', 'datatable', 'crypto', 'sjcl', 'gist-fs', 'session-value']
             }
         };
 
@@ -120,7 +138,11 @@ rmdirThen(destChartsDir, function() {
                     return path.substr(0, 2) == '//' ? cdnjs(path) : rawgit(chartslib+'/'+id+'/'+path);
                 }),
                 config: config,
-                type: id
+                type: id,
+                user: dbGithubUser,
+                dbGistId: dbGistId,
+                cipherKeyStorageId: cipherKeyStorageId,
+                githubPwdStorageId: githubPwdStorageId
             });
 
             fs.writeFile(destChartsDir+'/'+id+'.html', html, function(err) {
@@ -141,7 +163,7 @@ rmdirThen(destWebviewsDir, function() {
                 exports: 'Tablesort'
             },
             'ui-utils': {
-                url: rawgit('/js-ui-utils/0.2.0/ui-utils')
+                url: rawgit(uiutilslib+'/ui-utils')
             }
         };
     var webviews = {
@@ -199,8 +221,7 @@ rmdirThen(destWebviewsDir, function() {
                             http: rawgit(datalib+'/http'),
                             text: cdnjs('/require-text/2.0.12/text.min'),
                             jquery: cdnjs('/jquery/3.1.0/jquery.min'),
-                            sjcl: cdnjs('/sjcl/1.0.6/sjcl.min'),
-                            webviews: rawgit(webviewslib+'/webviews')
+                            sjcl: cdnjs('/sjcl/1.0.6/sjcl.min')
                         },
                         shim: {}
                     };
@@ -257,3 +278,15 @@ rmdirThen(destJs1kDir, function() {
 });
 rmdirThen(destPlaygroundDir);
 rmdirThen(destPostsDir);
+
+fs.readFile(dbTemplate, 'utf8', function(err, data) {
+    fs.writeFile(destDbFile, ejs.render(data, {
+        user: dbGithubUser,
+        dbGistId: dbGistId,
+        cipherKeyStorageId: cipherKeyStorageId,
+        githubPwdStorageId: githubPwdStorageId
+    }), function(err) {
+        if (err) { console.log(err); return false }
+        return true;
+    });
+});

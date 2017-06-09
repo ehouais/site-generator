@@ -2,6 +2,10 @@
 stylesheets[]
 config
 type
+user
+dbGistId
+cipherKeyStorageId
+githubPwdStorageId
 %>
 <!DOCTYPE html>
 <html>
@@ -93,14 +97,26 @@ type
                 chart = Chart(document.body, params);
 
                 window.addEventListener('resize', chart.resize);
+
+                var match;
                 if (data.match(/^(https?|data):/)) {
                     require(['http'], function(Http) {
                         Http.get(data, {}, function(data) {
                             parse(data, true);
                         }, true);
                     });
+                } else if (match = data.match(/db\/(.+)/)) {
+                    require(['http', 'gist-fs', 'session-value', 'crypto'], function(Http, GistFs, SessionValue, crypto) {
+                        var githubPwd = SessionValue('<%- githubPwdStorageId %>'),
+                            localKey = SessionValue('<%- cipherKeyStorageId %>'),
+                            fs = GistFs('<%- user %>', githubPwd(), '<%- dbGistId %>');
+
+                        fs.get(match[1], function(data) {
+                            parse(crypto.decipher(localKey(), data.content), true);
+                        });
+                    });
                 } else {
-                    parse(data);
+                    parse(data, true);
                 }
             });
         </script>

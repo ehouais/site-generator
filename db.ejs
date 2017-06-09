@@ -1,0 +1,254 @@
+<%#
+user
+dbGistId
+cipherKeyStorageId
+githubPwdStorageId
+%>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src="//cdnjs.cloudflare.com/ajax/libs/require.js/2.3.2/require.min.js"></script>
+        <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+        <style>
+            .file, textarea[name="value"] {
+                font-family: 'courier new';
+            }
+            .file {
+                padding: 2px 6px;
+            }
+            textarea[name="value"] {
+                font-size: 12px;
+                white-space: pre;
+                resize: none;
+                word-wrap: normal;
+                height: 600px;
+                margin-bottom: 10px;
+            }
+            #list {
+                margin-top: 15px;
+            }
+            #list .list-group {
+                max-height: 600px;
+                overflow-y: auto;
+            }
+            #list .file {
+                cursor: pointer;
+            }
+            #list .file:hover {
+                background-color: #fee;
+            }
+            #list .file.selected {
+                background-color: #fdd;
+            }
+            .buttons button {
+                margin-left: 4px;
+            }
+            .buttons button:first-child {
+                margin-left: 0;
+            }
+            button.new {
+                width: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="page-header">
+                <h1>Gist-based data storage with client-side encryption</h1>
+            </div>
+            <div class="row">
+                <div class="col-lg-9">
+                    <form class="form-horizontal" role="form">
+                        <textarea class="form-control" name="value" rows="20"></textarea>
+                        <div class="buttons">
+                            <button type="button" class="btn btn-success pull-left update">Update</button>
+                            <button type="button" class="btn btn-danger pull-right delete">Delete</button>
+                            <button type="button" class="btn btn-default pull-right reset">Reset</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-lg-3">
+                    <button type="button" class="btn btn-success new">New file</button>
+                    <div id="list">
+                        <div class="list-group">
+                            <div class="list-group-item file" template-id="data-uri"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            require.config({
+                baseUrl: '//cdn.rawgit.com/<%- user %>',
+                paths: {
+                    'immutable': '//cdnjs.cloudflare.com/ajax/libs/immutable/3.8.1/immutable.min',
+                    'sjcl': '//cdnjs.cloudflare.com/ajax/libs/sjcl/1.0.6/sjcl.min',
+                    'observable': 'js-data-libs/v0.3.0/observable',
+                    'streams': 'js-data-libs/v0.3.0/streams',
+                    'http': 'js-data-libs/v0.4.0/http',
+                    'ui-utils': 'js-ui-utils/v0.4.0/ui-utils',
+                    'gist-fs': '//rawgit.com/ehouais/js-data-libs/dev/gist-fs',
+                    'session-value': '//rawgit.com/ehouais/js-data-libs/dev/session-value',
+                    'crypto': '//rawgit.com/ehouais/js-data-libs/dev/crypto',
+                },
+                shim: {
+                    'sjcl': {
+                        exports: 'sjcl'
+                    }
+                },
+            });
+
+            require(['ui-utils', 'streams', 'http', 'gist-fs', 'session-value', 'crypto'], function($, Stream, Http, GistFs, SessionValue, crypto) {
+                var templates = $.extract('template-id'),
+                    githubPwd = SessionValue('<%- githubPwdStorageId %>'),
+                    localKey = SessionValue('<%- cipherKeyStorageId %>'),
+                    data = (function() {
+                        var fs = GistFs('<%- user %>', githubPwd(), '<%- dbGistId %>'),
+                            files = {},
+                            selected,
+                            stream = Stream(),
+                            output = stream.output(),
+                            push = function() {
+                                if (!files[selected]) selected = null;
+                                stream.push({
+                                    files: files,
+                                    selected: selected
+                                });
+                            };
+
+                        output.refresh = function() {
+                            fs.getAll(function(allFiles) {
+                                files = allFiles;
+                                push();
+                            });
+                        };
+                        output.select = function(filename) {
+                            if (filename != selected && files[filename]) {
+                                selected = filename;
+                                push();
+                            }
+                        };
+                        output.create = function(filename) {
+                            fs.create(filename, function() {
+                                files[selected = filename] = '';
+                                push();
+                            });
+                        }
+                        output.save = function(content) {
+                            fs.update(selected, content, function() {
+                                files[selected] = content;
+                                push();
+                            });
+                        };
+                        output.delete = function() {
+                            fs.delete(selected, function() {
+                                delete files[selected];
+                                push();
+                            });
+                        };
+
+                        return output;
+                    })();
+
+                // "New" button
+                $.UI($.select('button.new'), function(createFile) {
+                    this.addEventListener('click', function(e) {
+                        var filename = window.prompt('Enter filename');
+                        if (filename) createFile(filename);
+                    });
+                }).activate(
+                    data.create
+                );
+
+                // file list
+                $.UI($.select('#list'), function(filenames, selectedFile, selectFile) {
+                    var list = $.select('.list-group', this);
+
+                    filenames.bind($.toNodes(list, $.template(templates['data-uri'], function(filename) {
+                        this.textContent = filename;
+                        this.setAttribute('data-filename', filename);
+                    })));
+
+                    selectedFile.bind(function(filename) {
+                        var $selected;
+
+                        $select = $.select('.selected', list);
+                        $selected && $selected.classList.remove('selected');
+                        $selected = $.select('[data-filename="'+filename+'"]', list);
+                        $selected && $selected.classList.add('selected');
+                    });
+
+                    list.addEventListener('click', $.delegate('.file', function(e) {
+                        selectFile(this.getAttribute('data-filename'));
+                        e.preventDefault();
+                    }));
+                }).activate(
+                    data.property('files').map(function(files) {
+                        return files.keySeq();
+                    }),
+                    data.property('selected'),
+                    data.select
+                );
+
+                // form
+                $.UI($.select('form'), function(model, saveFile, deleteFile, selectFile) {
+                    var plain = model.map(function(data) {
+                            if (data.get('selected')) {
+                                return crypto.decrypt(localKey(), data.get('files').get(data.get('selected')).get('content'));
+                            }
+                        }),
+                        $textarea = $.select('textarea[name="value"]', this);
+
+                    // textarea
+                    plain.bind(function(data) {
+                        var disabled = !(typeof data == 'string');
+                        $.toggleAttribute($textarea, 'disabled', disabled && 'disabled');
+                        $textarea.value = disabled ? '' : data;
+                    });
+
+                    // form buttons
+                    $.UI($.select('.buttons', this), function(plain, saveFile, deleteFile, selectFile) {
+                        // buttons
+                        var $update = $.select('.update', this),
+                            $reset = $.select('.reset', this),
+                            $delete = $.select('.delete', this),
+                            updateBtns = function(data) {
+                                $update.setAttribute('disabled', 'disabled');
+                                $.toggleAttribute($reset, 'disabled', !data && 'disabled');
+                                $.toggleAttribute($delete, 'disabled', !data && 'disabled');
+                            };
+
+                        updateBtns();
+
+                        plain.bind(updateBtns);
+
+                        $textarea.addEventListener('input', function() { // TODO: improve dependency to $textarea
+                            $update.removeAttribute('disabled');
+                        });
+                        $update.addEventListener('click', function(e) {
+                            saveFile(crypto.cipher(localKey(), $textarea.value));
+                        });
+                        $reset.addEventListener('click', function(e) {
+                            selectFile();
+                        });
+                        $delete.addEventListener('click', function(e) {
+                            window.confirm('Are you sure ?') && deleteFile();
+                        });
+                    }).activate(
+                        plain,
+                        saveFile,
+                        deleteFile,
+                        selectFile
+                    );
+                }).activate(
+                    data,
+                    data.save,
+                    data.delete,
+                    data.select
+                );
+
+                data.refresh();
+            });
+        </script>
+    </body>
+</html>
