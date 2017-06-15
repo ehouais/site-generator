@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "gen": "node ./gen.js",
-    "server": "http-server ../ehouais.github.io"
+    "server": "./node_modules/http-server-fallback/bin/http-server ../ehouais.github.io -f 404.html"
   },
   "author": "",
   "license": "ISC",
@@ -17,6 +17,6 @@
     "rimraf": "^2.6.1"
   },
   "devDependencies": {
-    "http-server": "latest"
+    "http-server-fallback": "^0.8.5"
   }
 }

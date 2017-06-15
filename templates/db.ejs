@@ -123,20 +123,20 @@ githubPwdStorageId
                             });
                         };
                         output.select = function(filename) {
-                            if (filename != selected && files[filename]) {
+                            if (filename != selected && filename in files) {
                                 selected = filename;
                                 push();
                             }
                         };
                         output.create = function(filename) {
-                            fs.create(filename, function() {
-                                files[selected = filename] = '';
+                            fs.update(filename, '.', function() {
+                                files[selected = filename] = {content: '.'};
                                 push();
                             });
                         }
                         output.save = function(content) {
                             fs.update(selected, content, function() {
-                                files[selected] = content;
+                                files[selected].content = content;
                                 push();
                             });
                         };
@@ -161,19 +161,22 @@ githubPwdStorageId
                 );
 
                 // file list
-                $.UI($.select('#list'), function(filenames, selectedFile, selectFile) {
+                $.UI($.select('#list'), function(files, selectFile) {
                     var list = $.select('.list-group', this);
 
-                    filenames.bind($.toNodes(list, $.template(templates['data-uri'], function(filename) {
+                    files.property('files').map(function(files) {
+                        return files.keySeq();
+                    }).bind($.toNodes(list, $.template(templates['data-uri'], function(filename) {
                         this.textContent = filename;
                         this.setAttribute('data-filename', filename);
                     })));
 
-                    selectedFile.bind(function(filename) {
-                        var $selected;
+                    files.bind(function(files) {
+                        var $selected,
+                            filename = files.get('selected');
 
                         $select = $.select('.selected', list);
-                        $selected && $selected.classList.remove('selected');
+                        // 'selected' class is automatically removed (by Bootstrap ?)
                         $selected = $.select('[data-filename="'+filename+'"]', list);
                         $selected && $selected.classList.add('selected');
                     });
@@ -183,10 +186,7 @@ githubPwdStorageId
                         e.preventDefault();
                     }));
                 }).activate(
-                    data.property('files').map(function(files) {
-                        return files.keySeq();
-                    }),
-                    data.property('selected'),
+                    data,
                     data.select
                 );
 
@@ -194,7 +194,7 @@ githubPwdStorageId
                 $.UI($.select('form'), function(model, saveFile, deleteFile, selectFile) {
                     var plain = model.map(function(data) {
                             if (data.get('selected')) {
-                                return crypto.decrypt(localKey(), data.get('files').get(data.get('selected')).get('content'));
+                                return crypto.decipher(localKey(), data.get('files').get(data.get('selected')).get('content'));
                             }
                         }),
                         $textarea = $.select('textarea[name="value"]', this);
