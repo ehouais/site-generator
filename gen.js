@@ -301,3 +301,13 @@ fs.readFile(dbTemplate, 'utf8', function(err, data) {
         return true;
     });
 });
+
+// 404.html
+var notfoundTemplate = templatesDir+'/404.ejs';
+var notfoundFile = siteDir+'/404.html';
+fs.readFile(notfoundTemplate, 'utf8', function(err, data) {
+    fs.writeFile(notfoundFile, data, function(err) {
+        if (err) { console.log(err); return false }
+        return true;
+    });
+});
