@@ -155,7 +155,6 @@ rmdirThen(assetsDir, function() {
             };
         var webviews = {
                 'dashboard': 'index',
-                'forms': 'index',
                 'notepad': 'index',
                 'tabs': 'index',
                 'todos': 'index',
@@ -169,10 +168,6 @@ rmdirThen(assetsDir, function() {
                 },
                 text: {
                     stylesheets: ['style.css']
-                },
-                tracker: {
-                    stylesheets: ['/twitter-bootstrap/3.3.7/css/bootstrap.min.css', 'style.css'],
-                    requirements: ['ui-utils']
                 },
             };
 
@@ -285,9 +280,9 @@ rmdirThen(postsDir);
 
 // database
 var dbTemplate = templatesDir+'/db.ejs';
-var dbGithubUser = 'ehouais';
+var dbGithubUser = '';
 var githubPwdStorageId = 'githubPwd';
-var dbGistId = '01105aa4337d5eb0be39d6501994bc99';
+var dbGistId = '';
 var dbFile = siteDir+'/db.html';
 var cipherKeyStorageId = 'cipherKey';
 fs.readFile(dbTemplate, 'utf8', function(err, data) {
