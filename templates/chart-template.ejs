@@ -2,8 +2,7 @@
 stylesheets[]
 config
 type
-user
-dbGistId
+gistIdStorageId
 cipherKeyStorageId
 githubPwdStorageId
 %>
@@ -48,14 +47,14 @@ githubPwdStorageId
 
             require(['chart'], function(Chart) {
                 var chart,
-                    parse = function(str, uri) {
+                    parse = function(str, cb) {
 <% if (['vbars', 'hbars', 'pie', 'lines', 'map'].indexOf(type) != -1) { %>
                         require(['datatable'], function(DataTable) {
-                            var lines = (uri ? str : str.replace(/;/g, '\n')).split('\n'),
+                            var lines = str.split('\n'),
                                 header = lines.shift(),
                                 types = [<% if (type == 'lines') { %>'date'<% } else if (type == 'map') { %>'numeric', 'numeric', 'text'<% } else { %>'text'<% } %>];
 
-                            chart.update({
+                            cb({
                                 cols: header.split(',').map(function(cell) {
                                     return {label: cell};
                                 }),
@@ -63,14 +62,13 @@ githubPwdStorageId
                             });
                         });
 <% } else if (type == 'diagram' || type == 'timeline') { %>
-                        if (uri) data = data.replace(/\n|\r/g, '');
+                        //if (uri) data = data.replace(/\n|\r/g, '');
                         require(['ext_parser'], function(parser) {
                             try {
-                                var data = parser.parse(str);
+                                cb(parser.parse(str));
                             } catch(e) {
                                 console.log('Parser error: '+e.message);
                             }
-                            chart.update(data);
                         });
 <% } %>
                     },
@@ -98,25 +96,73 @@ githubPwdStorageId
 
                 window.addEventListener('resize', chart.resize);
 
-                var match;
-                if (data.match(/^(https?|data):/)) {
-                    require(['http'], function(Http) {
-                        Http.get(data, {}, function(data) {
-                            parse(data, true);
+                var match,
+                    str,
+                    update = function(data) {
+                        chart.update(data);
+                    },
+                    debounce = function(func, wait, immediate) {
+                        var timeout;
+                        return function() {
+                            var context = this, args = arguments;
+                            var later = function() {
+                                timeout = null;
+                                if (!immediate) func.apply(context, args);
+                            };
+                            var callNow = immediate && !timeout;
+                            clearTimeout(timeout);
+                            timeout = setTimeout(later, wait);
+                            if (callNow) func.apply(context, args);
+                        };
+                    };
+                    Cache = function(id, cb, delay) {
+                        var debounced = debounce(cb, delay);
+
+                        return function(data) {
+                            localStorage.setItem(id, data);
+                            debounced(data);
+                        };
+                    };
+
+                if (match = data.match(/^data:([^,;]+)(;[^,]+)?,(.*)/)) {
+                    str = decodeURIComponent(match[3]);
+                    if (match[1] == 'text/csv') {
+                        str = str.replace(/;/g, '\n');
+                    }
+                    parse(str, update);
+                } else if (data.match(/^https?:/)) {
+                    require(['http', 'on-demand', 'crypto'], function(Http, OnDemand, crypto) {
+                        var uri = data,
+                            cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
+
+                        Http.get(uri, function(data) {
+                            parse(crypto.decipher(cipherKey, data), update);
                         }, true);
+
+                        chart.onchange && chart.onchange(Cache('dataCache', function(data) {
+                            Http.put(uri, crypto.cipher(cipherKey, data), true);
+                        }, 5000));
                     });
                 } else if (match = data.match(/db\/(.+)/)) {
-                    require(['http', 'gist-fs', 'session-value', 'crypto'], function(Http, GistFs, SessionValue, crypto) {
-                        var githubPwd = SessionValue('<%- githubPwdStorageId %>'),
-                            localKey = SessionValue('<%- cipherKeyStorageId %>'),
-                            fs = GistFs('<%- user %>', githubPwd(), '<%- dbGistId %>');
+                    require(['gist-fs', 'on-demand', 'crypto'], function(GistFs, OnDemand, crypto) {
+                        var id = match[1],
+                            fs = GistFs(
+                                'ehouais',
+                                OnDemand(sessionStorage, '<%- githubPwdStorageId %>'),
+                                OnDemand(localStorage, '<%- gistIdStorageId %>')
+                            ),
+                            cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
 
-                        fs.get(match[1], function(data) {
-                            parse(crypto.decipher(localKey(), data.content), true);
+                        fs.get(id, function(data) {
+                            parse(crypto.decipher(cipherKey, data.content), update);
                         });
+
+                        chart.onchange && chart.onchange(Cache('dataCache', function(data) {
+                            fs.update(id, crypto.cipher(cipherKey, data));
+                        }, 5000));
                     });
                 } else {
-                    parse(data, true);
+                    parse(data, update);
                 }
             });
         </script>

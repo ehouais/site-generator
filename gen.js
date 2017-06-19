@@ -33,14 +33,14 @@ var cdnjs = function(path) {
 var rawgit = function(path) {
         return '//cdn.rawgit.com/'+path;
     };
-var datalib = 'ehouais/js-data-libs/v0.3.0';
+var datalib = 'ehouais/js-data-libs/dev';
 var uiutilslib = 'ehouais/js-ui-utils/0.2.0';
 
-// assets
-var assetsDir = siteDir+'/assets';
-rmdirThen(assetsDir, function() {
+// pages
+var pagesDir = siteDir+'/pages';
+rmdirThen(pagesDir, function() {
     // charts
-    var chartsDir = assetsDir+'/charts';
+    var chartsDir = pagesDir+'/charts';
     var chartTemplate = templatesDir+'/chart-template.ejs';
     var chartslib = 'ehouais/charts/v0.3.1';
     rmdirThen(chartsDir, function() {
@@ -50,42 +50,38 @@ rmdirThen(assetsDir, function() {
                 'snap.svg': {url: cdnjs('/snap.svg/0.5.1/snap.svg-min')},
                 timescale: {url: rawgit(chartslib+'/timescale')},
                 twopassresize: {url: rawgit(chartslib+'/twopassresize')},
-                datatable: {url: '//rawgit.com/ehouais/js-data-libs/dev/datatable'},
-                'gist-fs': {url: '//rawgit.com/ehouais/js-data-libs/dev/gist-fs'},
-                'session-value': {url: '//rawgit.com/ehouais/js-data-libs/dev/session-value'},
-                crypto: {url: '//rawgit.com/ehouais/js-data-libs/dev/crypto'},
-                sjcl: {url: cdnjs('/sjcl/1.0.6/sjcl.min'), exports: 'sjcl'},
+                datatable: {url: rawgit(datalib+'/datatable')},
             };
         var charts = {
                 diagram: {
                     stylesheets: ['../condensed-font.css'],
-                    requirements: ['snap.svg', 'twopassresize', 'crypto', 'sjcl', 'gist-fs', 'session-value'],
+                    requirements: ['snap.svg', 'twopassresize'],
                     exports: {ext_parser: 'parser'}
                 },
                 hbars: {
                     stylesheets: ['../condensed-font.css', 'default.css'],
-                    requirements: ['d3', 'twopassresize', 'datatable', 'crypto', 'sjcl', 'gist-fs', 'session-value']
+                    requirements: ['d3', 'twopassresize', 'datatable']
                 },
                 lines: {
                     stylesheets: ['../condensed-font.css', 'default.css'],
-                    requirements: ['d3', 'timescale', 'twopassresize', 'datatable', 'crypto', 'sjcl', 'gist-fs', 'session-value']
+                    requirements: ['d3', 'timescale', 'twopassresize', 'datatable']
                 },
                 map: {
                     stylesheets: ['/leaflet/1.0.3/leaflet.css', 'default.css'],
-                    requirements: ['leaflet', 'datatable', 'crypto', 'sjcl', 'gist-fs', 'session-value']
+                    requirements: ['leaflet', 'datatable']
                 },
                 pie: {
                     stylesheets: ['../condensed-font.css', 'default.css'],
-                    requirements: ['d3', 'twopassresize', 'datatable', 'crypto', 'sjcl', 'gist-fs', 'session-value']
+                    requirements: ['d3', 'twopassresize', 'datatable']
                 },
                 timeline: {
                     stylesheets: ['../condensed-font.css', 'default.css'],
-                    requirements: ['d3', 'timescale', 'twopassresize', 'crypto', 'sjcl', 'gist-fs', 'session-value'],
+                    requirements: ['d3', 'timescale', 'twopassresize'],
                     exports: {ext_parser: 'parser'}
                 },
                 vbars: {
                     stylesheets: ['../condensed-font.css', 'default.css'],
-                    requirements: ['d3', 'twopassresize', 'datatable', 'crypto', 'sjcl', 'gist-fs', 'session-value']
+                    requirements: ['d3', 'twopassresize', 'datatable']
                 }
             };
 
@@ -100,9 +96,17 @@ rmdirThen(assetsDir, function() {
                         baseUrl: rawgit(chartslib+'/'+id),
                         paths: {
                             http: rawgit(datalib+'/http'),
-                            text: cdnjs('/require-text/2.0.12/text.min')
+                            text: cdnjs('/require-text/2.0.12/text.min'),
+                            'gist-fs': rawgit(datalib+'/gist-fs'),
+                            'on-demand': rawgit(datalib+'/on-demand'),
+                            crypto: rawgit(datalib+'/crypto'),
+                            sjcl: cdnjs('/sjcl/1.0.6/sjcl.min'),
                         },
-                        shim: {}
+                        shim: {
+                            sjcl: {
+                                exports: 'sjcl'
+                            }
+                        }
                     };
 
                 (chart.requirements || []).forEach(function(require) {
@@ -122,8 +126,7 @@ rmdirThen(assetsDir, function() {
                     }),
                     config: config,
                     type: id,
-                    user: dbGithubUser,
-                    dbGistId: dbGistId,
+                    gistIdStorageId: gistIdStorageId,
                     cipherKeyStorageId: cipherKeyStorageId,
                     githubPwdStorageId: githubPwdStorageId
                 });
@@ -191,7 +194,7 @@ rmdirThen(assetsDir, function() {
                                     return cdnjs(path)+delimiter;
                                 }
                             });
-                        fs.writeFile(assetsDir+'/'+id+'.html', html, function(err) {
+                        fs.writeFile(pagesDir+'/'+id+'.html', html, function(err) {
                             if (err) { console.log(err); return false }
                             return true;
                         });
@@ -226,7 +229,7 @@ rmdirThen(assetsDir, function() {
                         config: config
                     });
 
-                    fs.writeFile(assetsDir+'/'+id+'.html', html, function(err) {
+                    fs.writeFile(pagesDir+'/'+id+'.html', html, function(err) {
                         if (err) { console.log(err); return false }
                         return true;
                     });
@@ -236,7 +239,7 @@ rmdirThen(assetsDir, function() {
     })();
 
     // js1k
-    var js1kDir = assetsDir+'/js1k';
+    var js1kDir = pagesDir+'/js1k';
     var js1kTemplate = templatesDir+'/js1k-template.ejs';
     var js1klib = 'ehouais/js1k/6470cd8';
     rmdirThen(js1kDir, function() {
@@ -270,25 +273,19 @@ rmdirThen(assetsDir, function() {
 var appsDir = siteDir+'/apps';
 rmdirThen(appsDir);
 
-// pages
-var pagesDir = siteDir+'/pages';
-rmdirThen(pagesDir);
-
 // posts
 var postsDir = siteDir+'/posts';
 rmdirThen(postsDir);
 
 // database
 var dbTemplate = templatesDir+'/db.ejs';
-var dbGithubUser = '';
+var gistIdStorageId = 'gistId';
 var githubPwdStorageId = 'githubPwd';
-var dbGistId = '';
 var dbFile = siteDir+'/db.html';
 var cipherKeyStorageId = 'cipherKey';
 fs.readFile(dbTemplate, 'utf8', function(err, data) {
     fs.writeFile(dbFile, ejs.render(data, {
-        user: dbGithubUser,
-        dbGistId: dbGistId,
+        gistIdStorageId: gistIdStorageId,
         cipherKeyStorageId: cipherKeyStorageId,
         githubPwdStorageId: githubPwdStorageId
     }), function(err) {

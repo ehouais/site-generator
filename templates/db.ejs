@@ -1,6 +1,5 @@
 <%#
-user
-dbGistId
+gistIdStorageId
 cipherKeyStorageId
 githubPwdStorageId
 %>
@@ -79,7 +78,7 @@ githubPwdStorageId
         </div>
         <script>
             require.config({
-                baseUrl: '//cdn.rawgit.com/<%- user %>',
+                baseUrl: '//cdn.rawgit.com/ehouais',
                 paths: {
                     'immutable': '//cdnjs.cloudflare.com/ajax/libs/immutable/3.8.1/immutable.min',
                     'sjcl': '//cdnjs.cloudflare.com/ajax/libs/sjcl/1.0.6/sjcl.min',
@@ -88,7 +87,7 @@ githubPwdStorageId
                     'http': 'js-data-libs/v0.4.0/http',
                     'ui-utils': 'js-ui-utils/v0.4.0/ui-utils',
                     'gist-fs': '//rawgit.com/ehouais/js-data-libs/dev/gist-fs',
-                    'session-value': '//rawgit.com/ehouais/js-data-libs/dev/session-value',
+                    'on-demand': '//rawgit.com/ehouais/js-data-libs/dev/on-demand',
                     'crypto': '//rawgit.com/ehouais/js-data-libs/dev/crypto',
                 },
                 shim: {
@@ -98,12 +97,16 @@ githubPwdStorageId
                 },
             });
 
-            require(['ui-utils', 'streams', 'http', 'gist-fs', 'session-value', 'crypto'], function($, Stream, Http, GistFs, SessionValue, crypto) {
+            require(['ui-utils', 'streams', 'http', 'gist-fs', 'on-demand', 'local-value', 'crypto'], function($, Stream, Http, GistFs, OnDemand, crypto) {
                 var templates = $.extract('template-id'),
-                    githubPwd = SessionValue('<%- githubPwdStorageId %>'),
-                    localKey = SessionValue('<%- cipherKeyStorageId %>'),
+                    githubPwd = OnDemand(sessionStorage, '<%- githubPwdStorageId %>'),
+                    localKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>'),
                     data = (function() {
-                        var fs = GistFs('<%- user %>', githubPwd(), '<%- dbGistId %>'),
+                        var fs = GistFs(
+                                'ehouais',
+                                githubPwd(),
+                                OnDemand(localStorage, '<%- gistIdStorageId %>')
+                            ),
                             files = {},
                             selected,
                             stream = Stream(),
