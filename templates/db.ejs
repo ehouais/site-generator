@@ -1,5 +1,5 @@
 <%#
-gistIdStorageId
+dbGistIdStorageId
 cipherKeyStorageId
 githubPwdStorageId
 %>
@@ -97,16 +97,13 @@ githubPwdStorageId
                 },
             });
 
-            require(['ui-utils', 'streams', 'http', 'gist-fs', 'on-demand', 'local-value', 'crypto'], function($, Stream, Http, GistFs, OnDemand, crypto) {
+            require(['ui-utils', 'streams', 'gist-fs', 'on-demand', 'crypto'], function($, Stream, GistFs, OnDemand, crypto) {
                 var templates = $.extract('template-id'),
                     githubPwd = OnDemand(sessionStorage, '<%- githubPwdStorageId %>'),
                     localKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>'),
+                    dbGistId = OnDemand(localStorage, '<%- dbGistIdStorageId %>'),
                     data = (function() {
-                        var fs = GistFs(
-                                'ehouais',
-                                githubPwd(),
-                                OnDemand(localStorage, '<%- gistIdStorageId %>')
-                            ),
+                        var fs = GistFs('ehouais', githubPwd(), dbGistId()),
                             files = {},
                             selected,
                             stream = Stream(),

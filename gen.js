@@ -126,7 +126,7 @@ rmdirThen(pagesDir, function() {
                     }),
                     config: config,
                     type: id,
-                    gistIdStorageId: gistIdStorageId,
+                    dbGistIdStorageId: dbGistIdStorageId,
                     cipherKeyStorageId: cipherKeyStorageId,
                     githubPwdStorageId: githubPwdStorageId
                 });
@@ -182,11 +182,12 @@ rmdirThen(pagesDir, function() {
                 var html;
 
                 if (webview == 'index') {
-                    request('https:'+rawgit(webviewslib+'/'+id+'/index.html'), function (error, response, body) {
+                    fs.readFile('../webviews/'+id+'/index.html', 'utf8', function(err, body) {
+                    //request('https:'+rawgit(webviewslib+'/'+id+'/index.html'), function (error, response, body) {
                         if (err) { console.log(err); return false }
                         html = body
                             .replace('../webviews.js', rawgit(webviewslib+'/webviews.js'))
-                            .replace('../forms/', '../webviews/forms.html')
+                            .replace(new RegExp('../forms/', 'g'), '../forms.html')
                             .replace(/\/cdn(\/[^'"]+)('|")/g, function(match, path, delimiter) {
                                 if (path.indexOf('js-data-libs') != -1 || path.indexOf('js-ui-utils') != -1) {
                                     return rawgit(path.replace('/0.', '/v0.'))+delimiter;
@@ -279,13 +280,13 @@ rmdirThen(postsDir);
 
 // database
 var dbTemplate = templatesDir+'/db.ejs';
-var gistIdStorageId = 'gistId';
+var dbGistIdStorageId = 'dbGistId';
 var githubPwdStorageId = 'githubPwd';
 var dbFile = siteDir+'/db.html';
 var cipherKeyStorageId = 'cipherKey';
 fs.readFile(dbTemplate, 'utf8', function(err, data) {
     fs.writeFile(dbFile, ejs.render(data, {
-        gistIdStorageId: gistIdStorageId,
+        dbGistIdStorageId: dbGistIdStorageId,
         cipherKeyStorageId: cipherKeyStorageId,
         githubPwdStorageId: githubPwdStorageId
     }), function(err) {

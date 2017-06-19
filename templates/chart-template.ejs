@@ -2,7 +2,7 @@
 stylesheets[]
 config
 type
-gistIdStorageId
+dbGistIdStorageId
 cipherKeyStorageId
 githubPwdStorageId
 %>
@@ -114,7 +114,7 @@ githubPwdStorageId
                             timeout = setTimeout(later, wait);
                             if (callNow) func.apply(context, args);
                         };
-                    };
+                    },
                     Cache = function(id, cb, delay) {
                         var debounced = debounce(cb, delay);
 
@@ -136,29 +136,27 @@ githubPwdStorageId
                             cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
 
                         Http.get(uri, function(data) {
-                            parse(crypto.decipher(cipherKey, data), update);
+                            parse(crypto.decipher(cipherKey(), data), update);
                         }, true);
 
                         chart.onchange && chart.onchange(Cache('dataCache', function(data) {
-                            Http.put(uri, crypto.cipher(cipherKey, data), true);
+                            Http.put(uri, crypto.cipher(cipherKey(), data), true);
                         }, 5000));
                     });
                 } else if (match = data.match(/db\/(.+)/)) {
                     require(['gist-fs', 'on-demand', 'crypto'], function(GistFs, OnDemand, crypto) {
                         var id = match[1],
-                            fs = GistFs(
-                                'ehouais',
-                                OnDemand(sessionStorage, '<%- githubPwdStorageId %>'),
-                                OnDemand(localStorage, '<%- gistIdStorageId %>')
-                            ),
+                            githubPwd = OnDemand(sessionStorage, '<%- githubPwdStorageId %>'),
+                            dbGistId = OnDemand(localStorage, '<%- dbGistIdStorageId %>'),
+                            fs = GistFs('ehouais', githubPwd(), dbGistId()),
                             cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
 
                         fs.get(id, function(data) {
-                            parse(crypto.decipher(cipherKey, data.content), update);
+                            parse(crypto.decipher(cipherKey(), data.content), update);
                         });
 
                         chart.onchange && chart.onchange(Cache('dataCache', function(data) {
-                            fs.update(id, crypto.cipher(cipherKey, data));
+                            fs.update(id, crypto.cipher(cipherKey(), data));
                         }, 5000));
                     });
                 } else {
