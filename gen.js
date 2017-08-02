@@ -33,15 +33,15 @@ var cdnjs = function(path) {
 var rawgit = function(path) {
         return '//cdn.rawgit.com/'+path;
     };
-var datalib = 'ehouais/js-data-libs/dev';
-var uiutilslib = 'ehouais/js-ui-utils/0.2.0';
+var datalib = 'ehouais/js-data-libs/v0.5.0';
+var uiutilslib = 'ehouais/js-ui-utils/v0.4.0';
 
 // pages
 var pagesDir = siteDir+'/pages';
 rmdirThen(pagesDir, function() {
     // charts
     var chartsDir = pagesDir+'/charts';
-    var chartTemplate = templatesDir+'/chart-template.ejs';
+    var chartTemplate = templatesDir+'/chart.ejs';
     var chartslib = 'ehouais/charts/v0.3.1';
     rmdirThen(chartsDir, function() {
         var libs = {
@@ -140,7 +140,7 @@ rmdirThen(pagesDir, function() {
     });
 
     // webviews
-    var webviewTemplate = templatesDir+'/webview-template.ejs';
+    var webviewTemplate = templatesDir+'/webview.ejs';
     var webviewslib = 'ehouais/webviews/v0.3.0';
     (function() {
         var libs = {
@@ -241,7 +241,7 @@ rmdirThen(pagesDir, function() {
 
     // js1k
     var js1kDir = pagesDir+'/js1k';
-    var js1kTemplate = templatesDir+'/js1k-template.ejs';
+    var js1kTemplate = templatesDir+'/js1k.ejs';
     var js1klib = 'ehouais/js1k/6470cd8';
     rmdirThen(js1kDir, function() {
         fs.readFile(js1kTemplate, 'utf8', function(err, data) {
@@ -271,12 +271,12 @@ rmdirThen(pagesDir, function() {
 
 // apps
 // playground, selfservice, page generator ?
-var appsDir = siteDir+'/apps';
-rmdirThen(appsDir);
+/*var appsDir = siteDir+'/apps';
+rmdirThen(appsDir);*/
 
 // posts
-var postsDir = siteDir+'/posts';
-rmdirThen(postsDir);
+/*var postsDir = siteDir+'/posts';
+rmdirThen(postsDir);*/
 
 // database
 var dbTemplate = templatesDir+'/db.ejs';
