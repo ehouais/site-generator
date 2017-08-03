@@ -62,10 +62,9 @@ githubPwdStorageId
                             });
                         });
 <% } else if (type == 'diagram' || type == 'timeline') { %>
-                        //if (uri) data = data.replace(/\n|\r/g, '');
                         require(['ext_parser'], function(parser) {
                             try {
-                                cb(parser.parse(str));
+                                cb(parser.parse(str.replace(/\n|\r/g, '')));
                             } catch(e) {
                                 console.log('Parser error: '+e.message);
                             }
