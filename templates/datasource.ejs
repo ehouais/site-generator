@@ -1,0 +1,49 @@
+var match,
+    str;
+
+if (match = data.match(/^data:([^,;]+)(;[^,]+)?,(.*)/)) {
+    str = decodeURIComponent(match[3]);
+    if (match[1] == 'text/csv') {
+        str = str.replace(/;/g, '\n');
+    }
+    parse(str, chart.update);
+} else if (data.match(/^https?:/)) {
+    require(['http', 'on-demand', 'crypto'], function(Http, OnDemand, crypto) {
+        var uri = data,
+            cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
+
+        Http.get(uri, function(data) {
+            parse(crypto.decipher(cipherKey(), data), update);
+        }, true);
+    });
+} else if (match = data.match(/db\/(.+)/)) {
+    require(['gist-fs', 'on-demand', 'crypto'], function(GistFs, OnDemand, crypto) {
+        var id = match[1],
+            githubPwd = OnDemand(sessionStorage, '<%- githubPwdStorageId %>'),
+            dbGistId = OnDemand(localStorage, '<%- dbGistIdStorageId %>'),
+            fs = GistFs('ehouais', githubPwd(), dbGistId()),
+            cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
+
+        fs.get(id, function(data) {
+            parse(crypto.decipher(cipherKey(), data.content), update);
+        });
+    });
+} else if (match = data.match(/gs\/(.+)/)) {
+    require(['tabletop'], function(Tabletop) {
+        Tabletop.init({
+            key: 'https://docs.google.com/spreadsheets/d/'+match[1]+'/pubhtml',
+            callback: function(data, tabletop) {
+                var sheet = tabletop.models[tabletop.modelNames[0]]; // first sheet
+                update({
+                    cols: sheet.columnNames.map(function(name) {
+                        return {label: name};
+                    }),
+                    rows: sheet.toArray()
+                });
+            },
+            simpleSheet: true
+        });
+    });
+} else {
+    parse(data, update);
+}

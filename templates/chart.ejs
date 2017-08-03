@@ -71,6 +71,9 @@ githubPwdStorageId
                         });
 <% } %>
                     },
+                    update = function(data) {
+                        chart.update(data);
+                    },
                     params = {margin: 0.05};
 
 <% if (type == 'vbars' || type == 'hbars') { -%>
@@ -95,88 +98,7 @@ githubPwdStorageId
 
                 window.addEventListener('resize', chart.resize);
 
-                var match,
-                    str,
-                    update = function(data) {
-                        chart.update(data);
-                    },
-                    debounce = function(func, wait, immediate) {
-                        var timeout;
-                        return function() {
-                            var context = this, args = arguments;
-                            var later = function() {
-                                timeout = null;
-                                if (!immediate) func.apply(context, args);
-                            };
-                            var callNow = immediate && !timeout;
-                            clearTimeout(timeout);
-                            timeout = setTimeout(later, wait);
-                            if (callNow) func.apply(context, args);
-                        };
-                    },
-                    Cache = function(id, cb, delay) {
-                        var debounced = debounce(cb, delay);
-
-                        return function(data) {
-                            localStorage.setItem(id, data);
-                            debounced(data);
-                        };
-                    };
-
-                if (match = data.match(/^data:([^,;]+)(;[^,]+)?,(.*)/)) {
-                    str = decodeURIComponent(match[3]);
-                    if (match[1] == 'text/csv') {
-                        str = str.replace(/;/g, '\n');
-                    }
-                    parse(str, update);
-                } else if (data.match(/^https?:/)) {
-                    require(['http', 'on-demand', 'crypto'], function(Http, OnDemand, crypto) {
-                        var uri = data,
-                            cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
-
-                        Http.get(uri, function(data) {
-                            parse(crypto.decipher(cipherKey(), data), update);
-                        }, true);
-
-                        chart.onchange && chart.onchange(Cache('dataCache', function(data) {
-                            Http.put(uri, crypto.cipher(cipherKey(), data), true);
-                        }, 5000));
-                    });
-                } else if (match = data.match(/db\/(.+)/)) {
-                    require(['gist-fs', 'on-demand', 'crypto'], function(GistFs, OnDemand, crypto) {
-                        var id = match[1],
-                            githubPwd = OnDemand(sessionStorage, '<%- githubPwdStorageId %>'),
-                            dbGistId = OnDemand(localStorage, '<%- dbGistIdStorageId %>'),
-                            fs = GistFs('ehouais', githubPwd(), dbGistId()),
-                            cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
-
-                        fs.get(id, function(data) {
-                            parse(crypto.decipher(cipherKey(), data.content), update);
-                        });
-
-                        chart.onchange && chart.onchange(Cache('dataCache', function(data) {
-                            fs.update(id, crypto.cipher(cipherKey(), data));
-                        }, 5000));
-                    });
-                } else if (match = data.match(/gs\/(.+)/)) {
-                    require(['tabletop'], function(Tabletop) {
-                        Tabletop.init({
-                            key: 'https://docs.google.com/spreadsheets/d/'+match[1]+'/pubhtml',
-                            callback: function(data, tabletop) {
-                                var sheet = tabletop.models[tabletop.modelNames[0]]; // first sheet
-                                update({
-                                    cols: sheet.columnNames.map(function(name) {
-                                        return {label: name};
-                                    }),
-                                    rows: sheet.toArray()
-                                });
-                            },
-                            simpleSheet: true
-                        });
-                    });
-                } else {
-                    parse(data, update);
-                }
+<%- include templates/datasource %>
             });
         </script>
     </body>

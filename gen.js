@@ -88,7 +88,7 @@ rmdirThen(pagesDir, function() {
 
         fs.readFile(chartTemplate, 'utf8', function(err, data) {
             if (err) { console.log(err); return false }
-            var template = ejs.compile(data);
+            var template = ejs.compile(data, {filename: 'dummy'});
 
             props(charts, function(id, chart) {
                 var html;
