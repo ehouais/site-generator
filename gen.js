@@ -177,7 +177,7 @@ rmdirThen(pagesDir, function() {
 
         fs.readFile(webviewTemplate, 'utf8', function(err, data) {
             if (err) { console.log(err); return false }
-            var template = ejs.compile(data);
+            var template = ejs.compile(data, {filename: 'dummy'});
 
             props(webviews, function(id, webview) {
                 var html;
@@ -207,10 +207,16 @@ rmdirThen(pagesDir, function() {
                             paths: {
                                 http: rawgit(datalib+'/http'),
                                 text: cdnjs('/require-text/2.0.12/text.min'),
-                                jquery: cdnjs('/jquery/3.1.0/jquery.min'),
-                                sjcl: cdnjs('/sjcl/1.0.6/sjcl.min')
+                                sjcl: cdnjs('/sjcl/1.0.6/sjcl.min'),
+                                'gist-fs': rawgit(datalib+'/gist-fs'),
+                                'on-demand': rawgit(datalib+'/on-demand'),
+                                crypto: rawgit(datalib+'/crypto')
                             },
-                            shim: {}
+                            shim: {
+                                sjcl: {
+                                    exports: 'sjcl'
+                                }
+                            }
                         };
 
                     (webview.requirements || []).forEach(function(require) {
@@ -228,7 +234,11 @@ rmdirThen(pagesDir, function() {
                         stylesheets: webview.stylesheets.map(function(path) {
                             return path.substr(0, 2) == '//' ? cdnjs(path) : rawgit(webviewslib+'/'+id+'/'+path);
                         }),
-                        config: config
+                        config: config,
+                        type: id,
+                        dbGistIdStorageId: dbGistIdStorageId,
+                        cipherKeyStorageId: cipherKeyStorageId,
+                        githubPwdStorageId: githubPwdStorageId
                     });
 
                     fs.writeFile(pagesDir+'/'+id+'.html', html, function(err) {
