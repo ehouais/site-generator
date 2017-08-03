@@ -48,6 +48,7 @@ rmdirThen(pagesDir, function() {
                 d3: {url: cdnjs('/d3/4.2.8/d3.min')},
                 leaflet: {url: cdnjs('/leaflet/1.0.3/leaflet')},
                 'snap.svg': {url: cdnjs('/snap.svg/0.5.1/snap.svg-min')},
+                tabletop: {url: cdnjs('/tabletop.js/1.5.2/tabletop.min')},
                 timescale: {url: rawgit(chartslib+'/timescale')},
                 twopassresize: {url: rawgit(chartslib+'/twopassresize')},
                 datatable: {url: rawgit(datalib+'/datatable')},
@@ -55,33 +56,33 @@ rmdirThen(pagesDir, function() {
         var charts = {
                 diagram: {
                     stylesheets: ['../condensed-font.css'],
-                    requirements: ['snap.svg', 'twopassresize'],
+                    requirements: ['snap.svg', 'twopassresize', 'tabletop'],
                     exports: {ext_parser: 'parser'}
                 },
                 hbars: {
                     stylesheets: ['../condensed-font.css', 'default.css'],
-                    requirements: ['d3', 'twopassresize', 'datatable']
+                    requirements: ['d3', 'twopassresize', 'datatable', 'tabletop']
                 },
                 lines: {
                     stylesheets: ['../condensed-font.css', 'default.css'],
-                    requirements: ['d3', 'timescale', 'twopassresize', 'datatable']
+                    requirements: ['d3', 'timescale', 'twopassresize', 'datatable', 'tabletop']
                 },
                 map: {
                     stylesheets: ['/leaflet/1.0.3/leaflet.css', 'default.css'],
-                    requirements: ['leaflet', 'datatable']
+                    requirements: ['leaflet', 'datatable', 'tabletop']
                 },
                 pie: {
                     stylesheets: ['../condensed-font.css', 'default.css'],
-                    requirements: ['d3', 'twopassresize', 'datatable']
+                    requirements: ['d3', 'twopassresize', 'datatable', 'tabletop']
                 },
                 timeline: {
                     stylesheets: ['../condensed-font.css', 'default.css'],
-                    requirements: ['d3', 'timescale', 'twopassresize'],
+                    requirements: ['d3', 'timescale', 'twopassresize', 'tabletop'],
                     exports: {ext_parser: 'parser'}
                 },
                 vbars: {
                     stylesheets: ['../condensed-font.css', 'default.css'],
-                    requirements: ['d3', 'twopassresize', 'datatable']
+                    requirements: ['d3', 'twopassresize', 'datatable', 'tabletop']
                 }
             };
 

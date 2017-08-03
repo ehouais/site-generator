@@ -159,6 +159,22 @@ githubPwdStorageId
                             fs.update(id, crypto.cipher(cipherKey(), data));
                         }, 5000));
                     });
+                } else if (match = data.match(/gs\/(.+)/)) {
+                    require(['tabletop'], function(Tabletop) {
+                        Tabletop.init({
+                            key: 'https://docs.google.com/spreadsheets/d/'+match[1]+'/pubhtml',
+                            callback: function(data, tabletop) {
+                                var sheet = tabletop.models[tabletop.modelNames[0]]; // first sheet
+                                update({
+                                    cols: sheet.columnNames.map(function(name) {
+                                        return {label: name};
+                                    }),
+                                    rows: sheet.toArray()
+                                });
+                            },
+                            simpleSheet: true
+                        });
+                    });
                 } else {
                     parse(data, update);
                 }
