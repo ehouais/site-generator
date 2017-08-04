@@ -185,7 +185,22 @@ rmdirThen(pagesDir, function() {
             props(webviews, function(id, webview) {
                 var html;
 
-                if (webview == 'index') {
+                if (id == 'notepad' || id == 'dashboard') {
+                    ejs.renderFile(templatesDir+'/webviews.ejs', {
+                        dbGistIdStorageId: dbGistIdStorageId,
+                        cipherKeyStorageId: cipherKeyStorageId,
+                        githubPwdStorageId: githubPwdStorageId
+                    }, {}, function(err, str) {
+                        fs.readFile('../webviews/'+id+'/index.html', 'utf8', function(err, body) {
+                            if (err) { console.log(err); return false }
+                            html = body.replace('<script src="../webviews.js"></script>', str)
+                            fs.writeFile(pagesDir+'/'+id+'.html', html, function(err) {
+                                if (err) { console.log(err); return false }
+                                return true;
+                            });
+                        });
+                    });
+                } else if (webview == 'index') {
                     fs.readFile('../webviews/'+id+'/index.html', 'utf8', function(err, body) {
                     //request('https:'+rawgit(webviewslib+'/'+id+'/index.html'), function (error, response, body) {
                         if (err) { console.log(err); return false }
