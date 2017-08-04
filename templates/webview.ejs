@@ -38,7 +38,7 @@ githubPwdStorageId
 
             require(['renderer'], function(renderer) {
                 var parse = function(str, cb) {
-<% if (type == 'object-tree') { %>
+<% if (type == 'object-tree' || type == 'tabs') { %>
                         cb(JSON.parse(str));
 <% } else if (type == 'table') { %>
                         var rows = str.trim().split('\n').map(function(row) {

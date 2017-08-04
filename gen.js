@@ -142,7 +142,7 @@ rmdirThen(pagesDir, function() {
 
     // webviews
     var webviewTemplate = templatesDir+'/webview.ejs';
-    var webviewslib = 'ehouais/webviews/v0.3.0';
+    var webviewslib = 'ehouais/webviews/v0.4.0';
     (function() {
         var libs = {
                 jsontree: {
@@ -158,10 +158,13 @@ rmdirThen(pagesDir, function() {
                 }
             };
         var webviews = {
-                'dashboard': 'index',
-                'notepad': 'index',
-                'tabs': 'index',
-                'todos': 'index',
+                dashboard: 'index',
+                notepad: 'index',
+                tabs: {
+                    stylesheets: ['style.css'],
+                    requirements: ['ui-utils']
+                },
+                todos: 'index',
                 'object-tree': {
                     stylesheets: ['style.css'],
                     requirements: ['jsontree']
