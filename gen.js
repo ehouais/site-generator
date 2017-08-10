@@ -185,7 +185,7 @@ rmdirThen(pagesDir, function() {
             props(webviews, function(id, webview) {
                 var html;
 
-                if (id == 'notepad' || id == 'dashboard') {
+                if (id == 'notepad' || id == 'dashboard' || id == 'todos') {
                     ejs.renderFile(templatesDir+'/webviews.ejs', {
                         dbGistIdStorageId: dbGistIdStorageId,
                         cipherKeyStorageId: cipherKeyStorageId,
