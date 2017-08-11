@@ -6,7 +6,7 @@ if (match = data.match(/^data:([^,;]+)(;[^,]+)?,(.*)/)) {
     if (match[1] == 'text/csv') {
         str = str.replace(/;/g, '\n');
     }
-    parse(str, chart.update);
+    parse(str, update);
 } else if (data.match(/^https?:/)) {
     require(['http', 'on-demand', 'crypto'], function(Http, OnDemand, crypto) {
         var uri = data,
