@@ -1,0 +1,81 @@
+<html>
+    <head>
+        <style>
+            @font-face {
+                font-family: 'OpenSans';
+                src: url('/assets/OpenSans-Regular.ttf');
+            }
+            body {
+                font-family: OpenSans;
+                font-size: 14px;
+                margin: 0;
+                padding: 0;
+            }
+            a {
+                text-decoration: none;
+            }
+            a:hover {
+                color: #59F;
+            }
+            #nav {
+                position: fixed;
+                padding: 0 10px;
+                width: 210px;
+                height: 100%;
+                float: left;
+                background-color: #eee;
+                font-size: 13px;
+            }
+            #nav p {
+                margin-bottom: 0;
+            }
+            #nav ol {
+                margin-top: 0;
+            }
+            #post {
+                margin-left: 230px;
+                padding: 40px;
+                width: 700px;
+            }
+            #post .series, #post .title, #post .pubdate, #post .lastmodifdate {
+                text-align: center;
+            }
+            #post .series {
+                font-size: 18px;
+            }
+            #post .title {
+                font-size: 32px;
+                margin: 5px 0 15px;
+            }
+            #post .pubdate, #post .lastmodifdate {
+                font-size: 10px;
+            }
+            #post .lastmodifdate {
+                margin-bottom: 50px;
+            }
+            #post .pubdate:before {
+                content: 'published: ';
+            }
+            #post .lastmodifdate:before {
+                content: 'modified: ';
+            }
+            #post img {
+                height: 100px;
+                position: absolute;
+                left: 990px;
+            }
+            #post p {
+                text-align: justify;
+                text-indent: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="nav">
+<%- nav -%>
+        </div>
+        <div id="post">
+<%- post -%>
+        </div>
+    </body>
+</html>

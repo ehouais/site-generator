@@ -1,6 +1,5 @@
-var fs = require('fs');
+var fs = require('fs-extra');
 var path = require('path');
-var rimraf = require('rimraf');
 var ejs = require('ejs');
 var ncp = require('ncp').ncp;
 var request = require('request');
@@ -16,7 +15,7 @@ var rmdirThen = function(dir, then) {
             };
 
         if (fs.existsSync(dir)) {
-            rimraf(dir, function(err) {
+            fs.remove(dir, function(err) {
                 next();
             });
         } else {
@@ -302,23 +301,39 @@ rmdirThen(pagesDir, function() {
 rmdirThen(appsDir);*/
 
 // posts
-var postsDir = siteDir+'/posts';
-rmdirThen(postsDir, function() {
-    request('https://raw.githubusercontent.com/ehouais/blog-posts/master/index.md', function (error, response, body) {
-        if (error) { console.log(error); return false }
-        var html = marked(body),
-            regx = RegExp('href="(/[^"]*)/([^/]+)"', 'g'),
-            match;
-        while (match = regx.exec(html)) {
-            if (match[1]) {
-                //fs.mkdirSync(fs.realpathSync(postsDir+match[1]));
-            }
+var postsDir = siteDir+'/posts',
+    postTemplate = templatesDir+'/post.ejs',
+    getAllMatches = function(regx, string) {
+        var match,
+            matches = [];
+
+        while (match = regx.exec(string)) {
+            matches.push(match);
         }
-        fs.writeFile(postsDir+'/index.html', html, function(err) {
-            if (err) { console.log(err); return false }
-            return true;
+        return matches
+    };
+rmdirThen(postsDir, function() {
+    fs.readFile(postTemplate, 'utf8', function(err, data) {
+        var template = ejs.compile(data);
+        request('https://raw.githubusercontent.com/ehouais/blog-posts/master/index.md', function (error, response, md) {
+            if (error) { console.log(error); return false }
+            var nav = marked(md);
+
+            getAllMatches(RegExp('href="(/[^"]+)?(/[^/]+)"', 'g'), nav).forEach(function(match) {
+                var path = match[1] || '',
+                    filepath = path+match[2];
+                request('https://raw.githubusercontent.com/ehouais/blog-posts/master'+filepath+'.md', function (error, response, md) {
+                    if (path) {
+                        fs.ensureDirSync(postsDir+path);
+                    }
+                    fs.writeFileSync(postsDir+filepath+'.html', template({
+                        nav: nav,
+                        post: marked(md)
+                    }));
+                });
+            });
         });
-    });        
+    });
 });
 
 // database
