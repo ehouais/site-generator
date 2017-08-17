@@ -4,6 +4,7 @@ var rimraf = require('rimraf');
 var ejs = require('ejs');
 var ncp = require('ncp').ncp;
 var request = require('request');
+var marked = require('marked');
 
 var siteDir = '../ehouais.github.io';
 var templatesDir = './templates';
@@ -191,8 +192,8 @@ rmdirThen(pagesDir, function() {
                         cipherKeyStorageId: cipherKeyStorageId,
                         githubPwdStorageId: githubPwdStorageId
                     }, {}, function(err, str) {
-                        fs.readFile('../webviews/'+id+'/index.html', 'utf8', function(err, body) {
-                            if (err) { console.log(err); return false }
+                        request('https://raw.githubusercontent.com/'+webviewslib+'/'+id+'/index.html', function (error, response, body) {
+                            if (error) { console.log(error); return false }
                             html = body.replace('<script src="../webviews.js"></script>', str)
                             fs.writeFile(pagesDir+'/'+id+'.html', html, function(err) {
                                 if (err) { console.log(err); return false }
@@ -201,12 +202,9 @@ rmdirThen(pagesDir, function() {
                         });
                     });
                 } else if (webview == 'index') {
-                    fs.readFile('../webviews/'+id+'/index.html', 'utf8', function(err, body) {
-                    //request('https:'+rawgit(webviewslib+'/'+id+'/index.html'), function (error, response, body) {
-                        if (err) { console.log(err); return false }
+                    request('https://raw.githubusercontent.com/'+webviewslib+'/'+id+'/index.html', function (error, response, body) {
+                        if (error) { console.log(error); return false }
                         html = body
-                            .replace('../webviews.js', rawgit(webviewslib+'/webviews.js'))
-                            .replace(new RegExp('../forms/', 'g'), '../forms.html')
                             .replace(/\/cdn(\/[^'"]+)('|")/g, function(match, path, delimiter) {
                                 if (path.indexOf('js-data-libs') != -1 || path.indexOf('js-ui-utils') != -1) {
                                     return rawgit(path.replace('/0.', '/v0.'))+delimiter;
@@ -304,8 +302,24 @@ rmdirThen(pagesDir, function() {
 rmdirThen(appsDir);*/
 
 // posts
-/*var postsDir = siteDir+'/posts';
-rmdirThen(postsDir);*/
+var postsDir = siteDir+'/posts';
+rmdirThen(postsDir, function() {
+    request('https://raw.githubusercontent.com/ehouais/blog-posts/master/index.md', function (error, response, body) {
+        if (error) { console.log(error); return false }
+        var html = marked(body),
+            regx = RegExp('href="(/[^"]*)/([^/]+)"', 'g'),
+            match;
+        while (match = regx.exec(html)) {
+            if (match[1]) {
+                //fs.mkdirSync(fs.realpathSync(postsDir+match[1]));
+            }
+        }
+        fs.writeFile(postsDir+'/index.html', html, function(err) {
+            if (err) { console.log(err); return false }
+            return true;
+        });
+    });        
+});
 
 // database
 var dbTemplate = templatesDir+'/db.ejs';
