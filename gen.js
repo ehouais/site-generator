@@ -303,6 +303,7 @@ rmdirThen(appsDir);*/
 // posts
 var postsDir = siteDir+'/posts',
     postTemplate = templatesDir+'/post.ejs',
+    postSource = 'https://raw.githubusercontent.com/ehouais/blog-posts/dev-demos',
     getAllMatches = function(regx, string) {
         var match,
             matches = [];
@@ -315,20 +316,21 @@ var postsDir = siteDir+'/posts',
 rmdirThen(postsDir, function() {
     fs.readFile(postTemplate, 'utf8', function(err, data) {
         var template = ejs.compile(data);
-        request('https://raw.githubusercontent.com/ehouais/blog-posts/master/index.md', function (error, response, md) {
+        request(postSource+'/index.md', function (error, response, md) {
             if (error) { console.log(error); return false }
             var nav = marked(md);
 
             getAllMatches(RegExp('href="(/[^"]+)?(/[^/]+)"', 'g'), nav).forEach(function(match) {
                 var path = match[1] || '',
                     filepath = path+match[2];
-                request('https://raw.githubusercontent.com/ehouais/blog-posts/master'+filepath+'.md', function (error, response, md) {
+                request(postSource+filepath+'.md', function (error, response, md) {
                     if (path) {
                         fs.ensureDirSync(postsDir+path);
                     }
                     fs.writeFileSync(postsDir+filepath+'.html', template({
-                        nav: nav,
+                        nav: nav.replace(RegExp('href="/([0-9]{4})/', 'g'), 'href="/posts/$1/'),
                         post: marked(md)
+                            .replace(RegExp('href="/([0-9]{4})/', 'g'), 'href="/posts/$1/')
                             .replace(RegExp('/cdn/', 'g'), '/assets/')
                             .replace(RegExp('//ehouais.net/blog/wp-content/uploads/[^"]+/', 'g'), '/assets/img/')
                     }));
