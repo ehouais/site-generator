@@ -329,6 +329,8 @@ rmdirThen(postsDir, function() {
                     fs.writeFileSync(postsDir+filepath+'.html', template({
                         nav: nav,
                         post: marked(md)
+                            .replace(RegExp('/cdn/', 'g'), '/assets/')
+                            .replace(RegExp('//ehouais.net/blog/wp-content/uploads/[^"]+/', 'g'), '/assets/img/')
                     }));
                 });
             });
