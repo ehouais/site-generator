@@ -366,3 +366,8 @@ fs.readFile(notfoundTemplate, 'utf8', function(err, data) {
         return true;
     });
 });
+
+// Assets
+var assetsDir = siteDir+'/assets';
+console.log('Copying assets...');
+fs.copySync('assets', assetsDir);
