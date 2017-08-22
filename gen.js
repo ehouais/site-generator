@@ -19,8 +19,8 @@ var cdnjs = function(path) {
 var rawgit = function(path) {
         return '//cdn.rawgit.com/'+path;
     };
-var datalib = 'ehouais/js-data-libs/v0.5.0';
-var uiutilslib = 'ehouais/js-ui-utils/v0.4.0';
+var datalib = 'ehouais/js-data-libs/v0.5.1';
+var uiutilslib = 'ehouais/js-ui-utils/v0.4.1';
 
 // Start from scratch
 console.log('Emptying destination folder...');
