@@ -6,6 +6,7 @@ var request = require('request');
 var marked = require('marked');
 
 var siteDir = '../ehouais.github.io';
+var toolsDir = siteDir+'/tools'
 var templatesDir = './templates';
 
 var props = function(obj, cb) {
@@ -31,10 +32,13 @@ fs.readdirSync(siteDir).forEach(function(name) {
 })
 
 // charts
-var chartsDir = siteDir+'/charts';
+var chartsDir = toolsDir+'/charts';
 var chartTemplate = templatesDir+'/chart.ejs';
 var chartslib = 'ehouais/charts/v0.3.1';
-fs.mkdir(chartsDir, function() {
+fs.ensureDirSync(chartsDir);
+fs.readFile(chartTemplate, 'utf8', function(err, data) {
+    if (err) { console.log(err); return false }
+    var template = ejs.compile(data, {filename: 'dummy'});
     var libs = {
             d3: {url: cdnjs('/d3/4.2.8/d3.min')},
             leaflet: {url: cdnjs('/leaflet/1.0.3/leaflet')},
@@ -77,57 +81,52 @@ fs.mkdir(chartsDir, function() {
             }
         };
 
-    fs.readFile(chartTemplate, 'utf8', function(err, data) {
-        if (err) { console.log(err); return false }
-        var template = ejs.compile(data, {filename: 'dummy'});
+    console.log('Generating charts...');
+    props(charts, function(id, chart) {
+        var html;
 
-        console.log('Generating charts...');
-        props(charts, function(id, chart) {
-            var html;
-
-            var config = {
-                    baseUrl: rawgit(chartslib+'/'+id),
-                    paths: {
-                        http: rawgit(datalib+'/http'),
-                        text: cdnjs('/require-text/2.0.12/text.min'),
-                        'gist-fs': rawgit(datalib+'/gist-fs'),
-                        'on-demand': rawgit(datalib+'/on-demand'),
-                        crypto: rawgit(datalib+'/crypto'),
-                        sjcl: cdnjs('/sjcl/1.0.6/sjcl.min'),
-                    },
-                    shim: {
-                        sjcl: {
-                            exports: 'sjcl'
-                        }
+        var config = {
+                baseUrl: rawgit(chartslib+'/'+id),
+                paths: {
+                    http: rawgit(datalib+'/http'),
+                    text: cdnjs('/require-text/2.0.12/text.min'),
+                    'gist-fs': rawgit(datalib+'/gist-fs'),
+                    'on-demand': rawgit(datalib+'/on-demand'),
+                    crypto: rawgit(datalib+'/crypto'),
+                    sjcl: cdnjs('/sjcl/1.0.6/sjcl.min'),
+                },
+                shim: {
+                    sjcl: {
+                        exports: 'sjcl'
                     }
-                };
-
-            (chart.requirements || []).forEach(function(require) {
-                var info = libs[require];
-                config.paths[require] = info.url;
-                if (info.exports) {
-                    config.shim[require] = {exports: info.exports};
                 }
-            });
-            props(chart.exports || {}, function(id, exp) {
-                config.shim[id] = {exports: exp};
-            });
+            };
 
-            html = template({
-                stylesheets: chart.stylesheets.map(function(path) {
-                    return path.substr(0, 2) == '//' ? cdnjs(path) : rawgit(chartslib+'/'+id+'/'+path);
-                }),
-                config: config,
-                type: id,
-                dbGistIdStorageId: dbGistIdStorageId,
-                cipherKeyStorageId: cipherKeyStorageId,
-                githubPwdStorageId: githubPwdStorageId
-            });
+        (chart.requirements || []).forEach(function(require) {
+            var info = libs[require];
+            config.paths[require] = info.url;
+            if (info.exports) {
+                config.shim[require] = {exports: info.exports};
+            }
+        });
+        props(chart.exports || {}, function(id, exp) {
+            config.shim[id] = {exports: exp};
+        });
 
-            fs.writeFile(chartsDir+'/'+id+'.html', html, function(err) {
-                if (err) { console.log(err); return false }
-                return true;
-            });
+        html = template({
+            stylesheets: chart.stylesheets.map(function(path) {
+                return path.substr(0, 2) == '//' ? cdnjs(path) : rawgit(chartslib+'/'+id+'/'+path);
+            }),
+            config: config,
+            type: id,
+            dbGistIdStorageId: dbGistIdStorageId,
+            cipherKeyStorageId: cipherKeyStorageId,
+            githubPwdStorageId: githubPwdStorageId
+        });
+
+        fs.writeFile(chartsDir+'/'+id+'.html', html, function(err) {
+            if (err) { console.log(err); return false }
+            return true;
         });
     });
 });
@@ -175,9 +174,10 @@ var webviewslib = 'ehouais/webviews/v0.5.0';
         var template = ejs.compile(data, {filename: 'dummy'});
 
         console.log('Generating webviews...');
+        fs.ensureDirSync(toolsDir);
         props(webviews, function(id, webview) {
             var html,
-                destPath = siteDir+'/'+id+'.html';
+                destPath = toolsDir+'/'+id+'.html';
 
             if (id == 'notepad' || id == 'dashboard' || id == 'todos') {
                 ejs.renderFile(templatesDir+'/webviews.ejs', {
@@ -333,10 +333,11 @@ fs.readFile(postTemplate, 'utf8', function(err, data) {
 var dbTemplate = templatesDir+'/db.ejs';
 var dbGistIdStorageId = 'dbGistId';
 var githubPwdStorageId = 'githubPwd';
-var dbFile = siteDir+'/db.html';
+var dbFile = toolsDir+'/db.html';
 var cipherKeyStorageId = 'cipherKey';
 fs.readFile(dbTemplate, 'utf8', function(err, data) {
     console.log('Generating gist DB app...');
+    fs.ensureDirSync(toolsDir);
     fs.writeFile(dbFile, ejs.render(data, {
         dbGistIdStorageId: dbGistIdStorageId,
         cipherKeyStorageId: cipherKeyStorageId,

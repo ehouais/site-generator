@@ -1,7 +1,15 @@
 <html>
     <body>
         <script>
-            window.location.href = '/';
+            var l = window.location,
+                redir = '/',
+                match;
+
+            if (match = /^\/pages(\/.+)/.exec(l.pathname)) { 
+                redir = '/tools'+match[1]+l.search; 
+            }
+
+            l.href = redir;
         </script>
     </body>
 </html>
