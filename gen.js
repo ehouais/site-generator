@@ -136,10 +136,6 @@ var webviewTemplate = templatesDir+'/webview.ejs';
 var webviewslib = 'ehouais/webviews/v0.5.0';
 (function() {
     var libs = {
-            jsontree: {
-                url: cdnjs('/jsontree/0.2.1/jsontree'),
-                exports: 'JSONTree'
-            },
             tablesort: {
                 url: cdnjs('/tablesort/5.0.0/tablesort.min'),
                 exports: 'Tablesort'
@@ -155,17 +151,9 @@ var webviewslib = 'ehouais/webviews/v0.5.0';
                 stylesheets: ['style.css'],
                 requirements: ['ui-utils']
             },
-            todos: 'index',
-            'object-tree': {
-                stylesheets: ['style.css'],
-                requirements: ['jsontree']
-            },
             table: {
                 stylesheets: ['style.css'],
                 requirements: ['tablesort']
-            },
-            text: {
-                stylesheets: ['style.css']
             },
         };
 
@@ -179,7 +167,7 @@ var webviewslib = 'ehouais/webviews/v0.5.0';
             var html,
                 destPath = toolsDir+'/'+id+'.html';
 
-            if (id == 'notepad' || id == 'dashboard' || id == 'todos') {
+            if (id == 'notepad' || id == 'dashboard') {
                 ejs.renderFile(templatesDir+'/webviews.ejs', {
                     dbGistIdStorageId: dbGistIdStorageId,
                     cipherKeyStorageId: cipherKeyStorageId,
