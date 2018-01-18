@@ -17,11 +17,8 @@ var props = function(obj, cb) {
 var cdnjs = function(path) {
         return '//cdnjs.cloudflare.com/ajax/libs'+path;
     };
-var rawgit = function(path) {
-        return '//cdn.rawgit.com/'+path;
-    };
-var datalib = 'ehouais/js-data-libs/v0.5.1';
-var uiutilslib = 'ehouais/js-ui-utils/v0.4.1';
+var datalib = 'js-data-libs/v0.5.1';
+var uiutilslib = 'js-ui-utils/v0.4.2';
 
 // Start from scratch
 console.log('Emptying destination folder...');
@@ -31,22 +28,45 @@ fs.readdirSync(siteDir).forEach(function(name) {
     }
 })
 
+// Assets
+var assetsDir = siteDir+'/assets';
+var assets = [];
+console.log('Copying assets...');
+fs.copySync('assets', assetsDir);
+
+var fetchAsset = function(filepath) {
+        var url = 'https://raw.githubusercontent.com/ehouais/'+filepath;
+        if (assets.indexOf(url) != -1) {
+            return;
+        }
+        assets.push(url);
+        console.log('Fetching asset "'+url+'"...');
+        request(url, function (error, response, body) {
+            if (error) { console.log(error); return false }
+            fs.ensureDirSync(path.dirname(assetsDir+'/'+filepath));
+            fs.writeFile(assetsDir+'/'+filepath, body, function(err) {
+                if (err) { console.log(err); return false }
+                return true;
+            });
+        });
+    };
+
 // charts
 var chartsDir = toolsDir+'/charts';
 var chartTemplate = templatesDir+'/chart.ejs';
-var chartslib = 'ehouais/charts/v0.3.1';
+var chartslib = 'charts/v0.3.2';
 fs.ensureDirSync(chartsDir);
 fs.readFile(chartTemplate, 'utf8', function(err, data) {
     if (err) { console.log(err); return false }
     var template = ejs.compile(data, {filename: 'dummy'});
     var libs = {
-            d3: {url: cdnjs('/d3/4.2.8/d3.min')},
-            leaflet: {url: cdnjs('/leaflet/1.0.3/leaflet')},
-            'snap.svg': {url: cdnjs('/snap.svg/0.5.1/snap.svg-min')},
-            tabletop: {url: cdnjs('/tabletop.js/1.5.2/tabletop.min')},
-            timescale: {url: rawgit(chartslib+'/timescale')},
-            twopassresize: {url: rawgit(chartslib+'/twopassresize')},
-            datatable: {url: rawgit(datalib+'/datatable')},
+            d3: cdnjs('/d3/4.2.8/d3.min'),
+            leaflet: cdnjs('/leaflet/1.0.3/leaflet'),
+            'snap.svg': cdnjs('/snap.svg/0.5.1/snap.svg-min'),
+            tabletop: cdnjs('/tabletop.js/1.5.2/tabletop.min'),
+            timescale: chartslib+'/timescale',
+            twopassresize: chartslib+'/twopassresize',
+            datatable: datalib+'/datatable',
         };
     var charts = {
             diagram: {
@@ -86,13 +106,13 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
         var html;
 
         var config = {
-                baseUrl: rawgit(chartslib+'/'+id),
+                baseUrl: '/assets',
                 paths: {
-                    http: rawgit(datalib+'/http'),
+                    http: datalib+'/http',
                     text: cdnjs('/require-text/2.0.12/text.min'),
-                    'gist-fs': rawgit(datalib+'/gist-fs'),
-                    'on-demand': rawgit(datalib+'/on-demand'),
-                    crypto: rawgit(datalib+'/crypto'),
+                    'gist-fs': datalib+'/gist-fs',
+                    'on-demand': datalib+'/on-demand',
+                    crypto: datalib+'/crypto',
                     sjcl: cdnjs('/sjcl/1.0.6/sjcl.min'),
                 },
                 shim: {
@@ -102,11 +122,16 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
                 }
             };
 
+        fetchAsset(datalib+'/http.js');
+        fetchAsset(datalib+'/gist-fs.js');
+        fetchAsset(datalib+'/on-demand.js');
+        fetchAsset(datalib+'/crypto.js');
+        
         (chart.requirements || []).forEach(function(require) {
-            var info = libs[require];
-            config.paths[require] = info.url;
-            if (info.exports) {
-                config.shim[require] = {exports: info.exports};
+            var path = libs[require];
+            config.paths[require] = path;
+            if (path.substr(0, 2) != '//') {
+                fetchAsset(path+'.js');
             }
         });
         props(chart.exports || {}, function(id, exp) {
@@ -114,9 +139,16 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
         });
 
         html = template({
-            stylesheets: chart.stylesheets.map(function(path) {
-                return path.substr(0, 2) == '//' ? cdnjs(path) : rawgit(chartslib+'/'+id+'/'+path);
-            }),
+            stylesheets: chart.stylesheets.map(function(filepath) {
+                var apath;
+                if (filepath.substr(0, 2) == '..') {
+                    apath = chartslib+'/'+filepath.substr(3);
+                } else {
+                    apath = chartslib+'/'+id+'/'+filepath;
+                }
+                fetchAsset(apath);
+                return '/assets/'+apath;
+        }),
             config: config,
             type: id,
             dbGistIdStorageId: dbGistIdStorageId,
@@ -133,7 +165,7 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
 
 // webviews
 var webviewTemplate = templatesDir+'/webview.ejs';
-var webviewslib = 'ehouais/webviews/v0.5.0';
+var webviewslib = 'webviews/v0.5.0';
 (function() {
     var libs = {
             tablesort: {
@@ -141,7 +173,7 @@ var webviewslib = 'ehouais/webviews/v0.5.0';
                 exports: 'Tablesort'
             },
             'ui-utils': {
-                url: rawgit(uiutilslib+'/ui-utils')
+                url: uiutilslib+'/ui-utils'
             }
         };
     var webviews = {
@@ -188,7 +220,9 @@ var webviewslib = 'ehouais/webviews/v0.5.0';
                     html = body
                         .replace(/\/cdn(\/[^'"]+)('|")/g, function(match, path, delimiter) {
                             if (path.indexOf('js-data-libs') != -1 || path.indexOf('js-ui-utils') != -1) {
-                                return rawgit(path.replace('/0.', '/v0.'))+delimiter;
+                                var mpath = path.replace('/0.', '/v0.')+delimiter;
+                                fetchAsset(mpath);
+                                return mpath;
                             } else {
                                 return cdnjs(path)+delimiter;
                             }
@@ -200,14 +234,15 @@ var webviewslib = 'ehouais/webviews/v0.5.0';
                 });
             } else {
                 var config = {
-                        baseUrl: rawgit(webviewslib+'/'+id),
+                        baseUrl: '/assets',
                         paths: {
-                            http: rawgit(datalib+'/http'),
+                            http: datalib+'/http',
                             text: cdnjs('/require-text/2.0.12/text.min'),
                             sjcl: cdnjs('/sjcl/1.0.6/sjcl.min'),
-                            'gist-fs': rawgit(datalib+'/gist-fs'),
-                            'on-demand': rawgit(datalib+'/on-demand'),
-                            crypto: rawgit(datalib+'/crypto')
+                            'gist-fs': datalib+'/gist-fs',
+                            'on-demand': datalib+'/on-demand',
+                            crypto: datalib+'/crypto',
+                            renderer: webviewslib+'/'+id+'/renderer'
                         },
                         shim: {
                             sjcl: {
@@ -216,9 +251,18 @@ var webviewslib = 'ehouais/webviews/v0.5.0';
                         }
                     };
 
+                fetchAsset(datalib+'/http.js');
+                fetchAsset(datalib+'/gist-fs.js');
+                fetchAsset(datalib+'/on-demand.js');
+                fetchAsset(datalib+'/crypto.js');
+                fetchAsset(webviewslib+'/'+id+'/renderer.js');
+        
                 (webview.requirements || []).forEach(function(require) {
                     var info = libs[require];
                     config.paths[require] = info.url;
+                    if (info.url.substr(0, 2) != '//') {
+                        fetchAsset(info.url+'.js');
+                    }
                     if (info.exports) {
                         config.shim[require] = {exports: info.exports};
                     }
@@ -228,8 +272,15 @@ var webviewslib = 'ehouais/webviews/v0.5.0';
                 });
 
                 html = template({
-                    stylesheets: webview.stylesheets.map(function(path) {
-                        return path.substr(0, 2) == '//' ? cdnjs(path) : rawgit(webviewslib+'/'+id+'/'+path);
+                    stylesheets: webview.stylesheets.map(function(filepath) {
+                        var apath;
+                        if (filepath.substr(0, 2) == '..') {
+                            apath = webviewslib+'/'+filepath.substr(3);
+                        } else {
+                            apath = webviewslib+'/'+id+'/'+filepath;
+                        }
+                        fetchAsset(apath);
+                        return '/assets/'+apath;
                     }),
                     config: config,
                     type: id,
@@ -250,7 +301,7 @@ var webviewslib = 'ehouais/webviews/v0.5.0';
 // js1k
 var js1kDir = siteDir+'/js1k';
 var js1kTemplate = templatesDir+'/js1k.ejs';
-var js1klib = 'ehouais/js1k/6470cd8';
+var js1klib = 'js1k/6470cd8';
 fs.mkdir(js1kDir, function() {
     fs.readFile(js1kTemplate, 'utf8', function(err, data) {
         if (err) { console.log(err); return false }
@@ -264,10 +315,12 @@ fs.mkdir(js1kDir, function() {
             '2015-Islands',
             '2016-Gliese_581_c'
         ].forEach(function(id) {
+            var path = js1klib+'/'+id+'/plain.js';
             html = template({
                 demo: id,
-                url: rawgit(js1klib+'/'+id+'/plain.js')
+                url: '/assets/'+path
             });
+            fetchAsset(path);
 
             fs.writeFile(js1kDir+'/'+id+'.html', html, function(err) {
                 if (err) { console.log(err); return false }
@@ -284,7 +337,7 @@ fs.mkdir(appsDir);*/
 
 // posts
 var postTemplate = templatesDir+'/post.ejs',
-    postSource = 'https://raw.githubusercontent.com/ehouais/blog-posts/dev-demos',
+    postSource = 'https://raw.githubusercontent.com/ehouais/blog-posts/master',
     getAllMatches = function(regx, string) {
         var match,
             matches = [];
@@ -303,7 +356,9 @@ fs.readFile(postTemplate, 'utf8', function(err, data) {
         console.log('Generating blog posts...');
         getAllMatches(RegExp('href="/([0-9]{4}/[^"]+)?"', 'g'), nav).forEach(function(match) {
             var shortpath = '/'+(match[1] || 'index');
-            request(postSource+shortpath+'.md', function(error, response, md) {
+            var postUrl = postSource+shortpath+'.md';
+            console.log('Fetching post "'+postUrl+'"...');
+            request(postUrl, function(error, response, md) {
                 var filepath = siteDir+shortpath+'.html';
                 fs.ensureDirSync(path.dirname(filepath));
                 fs.writeFileSync(filepath, template({
@@ -323,6 +378,8 @@ var dbGistIdStorageId = 'dbGistId';
 var githubPwdStorageId = 'githubPwd';
 var dbFile = toolsDir+'/db.html';
 var cipherKeyStorageId = 'cipherKey';
+fetchAsset(datalib+'/observable.js');
+fetchAsset(datalib+'/streams.js');
 fs.readFile(dbTemplate, 'utf8', function(err, data) {
     console.log('Generating gist DB app...');
     fs.ensureDirSync(toolsDir);
@@ -346,8 +403,3 @@ fs.readFile(notfoundTemplate, 'utf8', function(err, data) {
         return true;
     });
 });
-
-// Assets
-var assetsDir = siteDir+'/assets';
-console.log('Copying assets...');
-fs.copySync('assets', assetsDir);
