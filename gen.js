@@ -200,12 +200,16 @@ var webviewslib = 'webviews/v0.5.0';
                 destPath = toolsDir+'/'+id+'.html';
 
             if (id == 'notepad' || id == 'dashboard') {
+                fetchAsset(uiutilslib+'/overlay.js');
+                fetchAsset(uiutilslib+'/form.js');
                 ejs.renderFile(templatesDir+'/webviews.ejs', {
                     dbGistIdStorageId: dbGistIdStorageId,
                     cipherKeyStorageId: cipherKeyStorageId,
                     githubPwdStorageId: githubPwdStorageId
                 }, {}, function(err, str) {
-                    request('https://raw.githubusercontent.com/'+webviewslib+'/'+id+'/index.html', function (error, response, body) {
+                    var url = 'https://raw.githubusercontent.com/ehouais/'+webviewslib+'/'+id+'/index.html';
+                    console.log('Fetching "'+url+'"...');
+                    request(url, function (error, response, body) {
                         if (error) { console.log(error); return false }
                         html = body.replace('<script src="../webviews.js"></script>', str)
                         fs.writeFile(destPath, html, function(err) {
@@ -215,7 +219,9 @@ var webviewslib = 'webviews/v0.5.0';
                     });
                 });
             } else if (webview == 'index') {
-                request('https://raw.githubusercontent.com/'+webviewslib+'/'+id+'/index.html', function (error, response, body) {
+                var url = 'https://raw.githubusercontent.com/ehouais/'+webviewslib+'/'+id+'/index.html';
+                console.log('Fetching "'+url+'"...');
+                request(url, function (error, response, body) {
                     if (error) { console.log(error); return false }
                     html = body
                         .replace(/\/cdn(\/[^'"]+)('|")/g, function(match, path, delimiter) {
