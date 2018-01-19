@@ -17,7 +17,7 @@ var props = function(obj, cb) {
 var cdnjs = function(path) {
         return '//cdnjs.cloudflare.com/ajax/libs'+path;
     };
-var datalib = 'js-data-libs/v0.5.1';
+var datalib = 'js-data-libs/v0.6.0';
 var uiutilslib = 'js-ui-utils/v0.4.2';
 
 // Start from scratch
@@ -115,7 +115,7 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
                 paths: {
                     http: datalib+'/http',
                     text: cdnjs('/require-text/2.0.12/text.min'),
-                    'gist-fs': datalib+'/gist-fs',
+                    'gist-db': datalib+'/gist-db',
                     'on-demand': datalib+'/on-demand',
                     crypto: datalib+'/crypto',
                     sjcl: cdnjs('/sjcl/1.0.6/sjcl.min'),
@@ -129,7 +129,7 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
             };
 
         fetchAsset(datalib+'/http.js');
-        fetchAsset(datalib+'/gist-fs.js');
+        fetchAsset(datalib+'/gist-db.js');
         fetchAsset(datalib+'/on-demand.js');
         fetchAsset(datalib+'/crypto.js');
         fetchAsset(chartslib+'/'+id+'/chart.js');
@@ -252,7 +252,7 @@ var webviewslib = 'webviews/v0.5.0';
                             http: datalib+'/http',
                             text: cdnjs('/require-text/2.0.12/text.min'),
                             sjcl: cdnjs('/sjcl/1.0.6/sjcl.min'),
-                            'gist-fs': datalib+'/gist-fs',
+                            'gist-db': datalib+'/gist-db',
                             'on-demand': datalib+'/on-demand',
                             crypto: datalib+'/crypto',
                             renderer: webviewslib+'/'+id+'/renderer'
@@ -265,7 +265,7 @@ var webviewslib = 'webviews/v0.5.0';
                     };
 
                 fetchAsset(datalib+'/http.js');
-                fetchAsset(datalib+'/gist-fs.js');
+                fetchAsset(datalib+'/gist-db.js');
                 fetchAsset(datalib+'/on-demand.js');
                 fetchAsset(datalib+'/crypto.js');
                 fetchAsset(webviewslib+'/'+id+'/renderer.js');

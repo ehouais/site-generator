@@ -82,13 +82,13 @@ githubPwdStorageId
                 paths: {
                     'immutable': '//cdnjs.cloudflare.com/ajax/libs/immutable/3.8.1/immutable.min',
                     'sjcl': '//cdnjs.cloudflare.com/ajax/libs/sjcl/1.0.6/sjcl.min',
-                    'observable': 'js-data-libs/v0.5.1/observable',
-                    'streams': 'js-data-libs/v0.5.1/streams',
-                    'http': 'js-data-libs/v0.5.1/http',
+                    'observable': 'js-data-libs/v0.6.0/observable',
+                    'streams': 'js-data-libs/v0.6.0/streams',
+                    'http': 'js-data-libs/v0.6.0/http',
                     'ui-utils': 'js-ui-utils/v0.4.2/ui-utils',
-                    'gist-fs': 'js-data-libs/v0.5.1/gist-fs',
-                    'on-demand': 'js-data-libs/v0.5.1/on-demand',
-                    'crypto': 'js-data-libs/v0.5.1/crypto',
+                    'gist-db': 'js-data-libs/v0.6.0/gist-db',
+                    'on-demand': 'js-data-libs/v0.6.0/on-demand',
+                    'crypto': 'js-data-libs/v0.6.0/crypto',
                 },
                 shim: {
                     'sjcl': {
@@ -97,13 +97,13 @@ githubPwdStorageId
                 },
             });
 
-            require(['ui-utils', 'streams', 'gist-fs', 'on-demand', 'crypto'], function($, Stream, GistFs, OnDemand, crypto) {
+            require(['ui-utils', 'streams', 'gist-db', 'on-demand', 'crypto'], function($, Stream, GistDb, OnDemand, crypto) {
                 var templates = $.extract('template-id'),
                     githubPwd = OnDemand(sessionStorage, '<%- githubPwdStorageId %>'),
                     localKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>'),
                     dbGistId = OnDemand(localStorage, '<%- dbGistIdStorageId %>'),
                     data = (function() {
-                        var fs = GistFs('ehouais', githubPwd(), dbGistId()),
+                        var db = GistDb({user: 'ehouais', password: githubPwd()}, dbGistId()),
                             files = {},
                             selected,
                             stream = Stream(),
@@ -117,7 +117,7 @@ githubPwdStorageId
                             };
 
                         output.refresh = function() {
-                            fs.getAll(function(allFiles) {
+                            db.getAll(function(allFiles) {
                                 files = allFiles;
                                 push();
                             });
@@ -129,19 +129,19 @@ githubPwdStorageId
                             }
                         };
                         output.create = function(filename) {
-                            fs.update(filename, '.', function() {
+                            db.update(filename, '.', function() {
                                 files[selected = filename] = {content: '.'};
                                 push();
                             });
                         }
                         output.save = function(content) {
-                            fs.update(selected, content, function() {
+                            db.update(selected, content, function() {
                                 files[selected].content = content;
                                 push();
                             });
                         };
                         output.delete = function() {
-                            fs.delete(selected, function() {
+                            db.delete(selected, function() {
                                 delete files[selected];
                                 push();
                             });

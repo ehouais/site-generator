@@ -17,14 +17,14 @@ if (match = data.match(/^data:([^,;]+)(;[^,]+)?,(.*)/)) {
         }, true);
     });
 } else if (match = data.match(/db\/(.+)/)) {
-    require(['gist-fs', 'on-demand', 'crypto'], function(GistFs, OnDemand, crypto) {
+    require(['gist-db', 'on-demand', 'crypto'], function(GistDb, OnDemand, crypto) {
         var id = match[1],
             githubPwd = OnDemand(sessionStorage, '<%- githubPwdStorageId %>'),
             dbGistId = OnDemand(localStorage, '<%- dbGistIdStorageId %>'),
-            fs = GistFs('ehouais', githubPwd(), dbGistId()),
+            db = GistDb({user: 'ehouais', password: githubPwd()}, dbGistId()),
             cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
 
-        fs.get(id, function(data) {
+        db.get(id, function(data) {
             parse(crypto.decipher(cipherKey(), data.content), update);
         });
     });
