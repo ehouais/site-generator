@@ -34,21 +34,26 @@ var assets = [];
 console.log('Copying assets...');
 fs.copySync('assets', assetsDir);
 
-var fetchAsset = function(filepath) {
-        var url = 'https://raw.githubusercontent.com/ehouais/'+filepath;
-        if (assets.indexOf(url) != -1) {
+var fetchAsset = function(filepath, forceSource) {
+        if (assets.indexOf(filepath) != -1) {
             return;
         }
-        assets.push(url);
-        console.log('Fetching asset "'+url+'"...');
-        request(url, function (error, response, body) {
-            if (error) { console.log(error); return false }
-            fs.ensureDirSync(path.dirname(assetsDir+'/'+filepath));
-            fs.writeFile(assetsDir+'/'+filepath, body, function(err) {
-                if (err) { console.log(err); return false }
-                return true;
+        assets.push(filepath);
+        var source = forceSource || 'https://raw.githubusercontent.com/ehouais/'+filepath;
+        fs.ensureDirSync(path.dirname(assetsDir+'/'+filepath));
+
+        console.log('Fetching asset "'+source+'"...');
+        if (source.substr(0, 4) == 'http') {
+            request(source, function (error, response, body) {
+                if (error) { console.log(error); return false }
+                fs.writeFile(assetsDir+'/'+filepath, body, function(err) {
+                    if (err) { console.log(err); return false }
+                    return true;
+                });
             });
-        });
+        } else {
+            fs.copy(source, assetsDir+'/'+filepath);
+        }
     };
 
 // charts
