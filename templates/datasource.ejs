@@ -1,3 +1,8 @@
+<%#
+dbGistIdStorageId
+cipherKeyStorageId
+githubPwdStorageId
+%>
 var match,
     str;
 
@@ -21,7 +26,7 @@ if (match = data.match(/^data:([^,;]+)(;[^,]+)?,(.*)/)) {
         var id = match[1],
             githubPwd = OnDemand(sessionStorage, '<%- githubPwdStorageId %>'),
             dbGistId = OnDemand(localStorage, '<%- dbGistIdStorageId %>'),
-            db = GistDb({user: 'ehouais', password: githubPwd()}, dbGistId()),
+            db = GistDb({gistid: dbGistId(), user: 'ehouais', password: githubPwd()}),
             cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
 
         db.get(id, function(data) {

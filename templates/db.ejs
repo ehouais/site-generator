@@ -103,7 +103,7 @@ githubPwdStorageId
                     localKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>'),
                     dbGistId = OnDemand(localStorage, '<%- dbGistIdStorageId %>'),
                     data = (function() {
-                        var db = GistDb({user: 'ehouais', password: githubPwd()}, dbGistId()),
+                        var db = GistDb({gistid: dbGistId(), user: 'ehouais', password: githubPwd()}),
                             files = {},
                             selected,
                             stream = Stream(),

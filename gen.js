@@ -9,6 +9,10 @@ var siteDir = '../ehouais.github.io';
 var toolsDir = siteDir+'/tools'
 var templatesDir = './templates';
 
+var dbGistIdStorageId = 'dbGistId';
+var githubPwdStorageId = 'githubPwd';
+var cipherKeyStorageId = 'cipherKey';
+
 var props = function(obj, cb) {
         Object.keys(obj).forEach(function(key) {
             cb(key, obj[key]);
@@ -17,7 +21,7 @@ var props = function(obj, cb) {
 var cdnjs = function(path) {
         return '//cdnjs.cloudflare.com/ajax/libs'+path;
     };
-var datalib = 'js-data-libs/v0.6.0';
+var datalib = 'js-data-libs/v0.7.0';
 var uiutilslib = 'js-ui-utils/v0.4.2';
 
 // Start from scratch
@@ -387,10 +391,7 @@ fs.readFile(postTemplate, 'utf8', function(err, data) {
 
 // database
 var dbTemplate = templatesDir+'/db.ejs';
-var dbGistIdStorageId = 'dbGistId';
-var githubPwdStorageId = 'githubPwd';
 var dbFile = toolsDir+'/db.html';
-var cipherKeyStorageId = 'cipherKey';
 fetchAsset(datalib+'/observable.js');
 fetchAsset(datalib+'/streams.js');
 fs.readFile(dbTemplate, 'utf8', function(err, data) {
