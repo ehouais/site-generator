@@ -114,6 +114,7 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
                     'on-demand': datalib+'/on-demand',
                     crypto: datalib+'/crypto',
                     sjcl: cdnjs('/sjcl/1.0.6/sjcl.min'),
+                    chart: chartslib+'/'+id+'/chart'
                 },
                 shim: {
                     sjcl: {
@@ -126,6 +127,7 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
         fetchAsset(datalib+'/gist-fs.js');
         fetchAsset(datalib+'/on-demand.js');
         fetchAsset(datalib+'/crypto.js');
+        fetchAsset(chartslib+'/'+id+'/chart.js');
         
         (chart.requirements || []).forEach(function(require) {
             var path = libs[require];
