@@ -71,7 +71,7 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
     var charts = {
             diagram: {
                 stylesheets: ['../condensed-font.css'],
-                requirements: ['snap.svg', 'twopassresize', 'tabletop'],
+                requirements: ['snap.svg', 'twopassresize', 'tabletop', 'ext_parser'],
                 exports: {ext_parser: 'parser'}
             },
             hbars: {
@@ -92,7 +92,7 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
             },
             timeline: {
                 stylesheets: ['../condensed-font.css', 'default.css'],
-                requirements: ['d3', 'timescale', 'twopassresize', 'tabletop'],
+                requirements: ['d3', 'timescale', 'twopassresize', 'tabletop', 'ext_parser'],
                 exports: {ext_parser: 'parser'}
             },
             vbars: {
@@ -128,9 +128,9 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
         fetchAsset(datalib+'/on-demand.js');
         fetchAsset(datalib+'/crypto.js');
         fetchAsset(chartslib+'/'+id+'/chart.js');
-        
+
         (chart.requirements || []).forEach(function(require) {
-            var path = libs[require];
+            var path = libs[require] || chartslib+'/'+id+'/'+require;
             config.paths[require] = path;
             if (path.substr(0, 2) != '//') {
                 fetchAsset(path+'.js');
