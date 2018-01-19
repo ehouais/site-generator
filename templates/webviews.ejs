@@ -1,13 +1,18 @@
+<%#
+dbGistIdStorageId
+cipherKeyStorageId
+githubPwdStorageId
+%>
 <script src="//cdnjs.cloudflare.com/ajax/libs/require.js/2.3.2/require.min.js"></script>
 <script>
     require.config({
-        baseUrl: '//cdn.rawgit.com/ehouais/webviews/v0.5.0/tabs',
+        baseUrl: '/assets',
         paths: {
-            http: '//cdn.rawgit.com/ehouais/js-data-libs/v0.5.1/http',
+            http: 'js-data-libs/v0.6.0/http',
             sjcl: '//cdnjs.cloudflare.com/ajax/libs/sjcl/1.0.6/sjcl.min',
-            'gist-fs': '//cdn.rawgit.com/ehouais/js-data-libs/v0.5.1/gist-fs',
-            'on-demand': '//cdn.rawgit.com/ehouais/js-data-libs/v0.5.1/on-demand',
-            crypto: '//cdn.rawgit.com/ehouais/js-data-libs/v0.5.1/crypto'
+            'gist-db': 'js-data-libs/v0.6.0/gist-db',
+            'on-demand': 'js-data-libs/v0.6.0/on-demand',
+            crypto: 'js-data-libs/v0.6.0/crypto'
         },
         shim: {sjcl: {exports: 'sjcl'}},
         config: {
@@ -48,25 +53,25 @@
                 };
             },
             load = function() {
-                require(['gist-fs', 'on-demand', 'crypto'], function(GistFs, OnDemand, crypto) {
+                require(['gist-db', 'on-demand', 'crypto'], function(GistDb, OnDemand, crypto) {
                     var githubPwd = OnDemand(sessionStorage, '<%- githubPwdStorageId %>'),
                         dbGistId = OnDemand(localStorage, '<%- dbGistIdStorageId %>'),
-                        fs = GistFs('ehouais', githubPwd(), dbGistId()),
+                        db = GistDb({gistid: dbGistId(), user: 'ehouais', password: githubPwd()}),
                         cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
 
-                    fs.get(id, function(data) {
+                    db.get(id, function(data) {
                         handler(crypto.decipher(cipherKey(), data.content));
                     });
                 });
             },
             save = debounce(function(data) {
-                require(['gist-fs', 'on-demand', 'crypto'], function(GistFs, OnDemand, crypto) {
+                require(['gist-db', 'on-demand', 'crypto'], function(GistDb, OnDemand, crypto) {
                     var githubPwd = OnDemand(sessionStorage, '<%- githubPwdStorageId %>'),
                         dbGistId = OnDemand(localStorage, '<%- dbGistIdStorageId %>'),
-                        fs = GistFs('ehouais', githubPwd(), dbGistId()),
+                        db = GistDb({gistid: dbGistId(), user: 'ehouais', password: githubPwd()}),
                         cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
 
-                    fs.update(id, crypto.cipher(cipherKey(), data), function() {
+                    db.update(id, crypto.cipher(cipherKey(), data), function() {
                         console.log('saved.');
                     });
                 });
