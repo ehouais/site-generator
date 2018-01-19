@@ -11,11 +11,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "ejs": "^2.5.6",
-    "fs-extra": "^4.0.1",
-    "marked": "^0.3.6",
+    "ejs": "^2.5.7",
+    "fs-extra": "^4.0.3",
+    "marked": "^0.3.12",
     "ncp": "^2.0.0",
-    "request": "^2.81.0"
+    "request": "^2.83.0"
   },
   "devDependencies": {}
 }
