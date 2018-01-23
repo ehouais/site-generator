@@ -1,7 +1,8 @@
 <%#
-dbGistIdStorageId
+datalibVersion
+uiutilslibVersion
 cipherKeyStorageId
-githubPwdStorageId
+mlabApiKeyIdStorageId
 %>
 <html>
     <head>
@@ -14,6 +15,7 @@ githubPwdStorageId
             }
             .file {
                 padding: 2px 6px;
+                font-size: 13px;
             }
             textarea[name="value"] {
                 font-size: 12px;
@@ -53,11 +55,12 @@ githubPwdStorageId
     <body>
         <div class="container">
             <div class="page-header">
-                <h1>Gist-based data storage with client-side encryption</h1>
+                <h1>mlab-based data storage with client-side encryption</h1>
             </div>
             <div class="row">
                 <div class="col-lg-9">
                     <form class="form-horizontal" role="form">
+                        <input type="hidden" name="id"/>
                         <textarea class="form-control" name="value" rows="20"></textarea>
                         <div class="buttons">
                             <button type="button" class="btn btn-success pull-left update">Update</button>
@@ -82,13 +85,13 @@ githubPwdStorageId
                 paths: {
                     'immutable': '//cdnjs.cloudflare.com/ajax/libs/immutable/3.8.1/immutable.min',
                     'sjcl': '//cdnjs.cloudflare.com/ajax/libs/sjcl/1.0.6/sjcl.min',
-                    'observable': 'js-data-libs/v0.6.0/observable',
-                    'streams': 'js-data-libs/v0.6.0/streams',
-                    'http': 'js-data-libs/v0.6.0/http',
-                    'ui-utils': 'js-ui-utils/v0.4.2/ui-utils',
-                    'gist-db': 'js-data-libs/v0.6.0/gist-db',
-                    'on-demand': 'js-data-libs/v0.6.0/on-demand',
-                    'crypto': 'js-data-libs/v0.6.0/crypto',
+                    'observable': 'js-data-libs/<%- datalibVersion %>/observable',
+                    'streams': 'js-data-libs/<%- datalibVersion %>/streams',
+                    'http': 'js-data-libs/<%- datalibVersion %>/http',
+                    'ui-utils': 'js-ui-utils/<%- uiutilslibVersion %>/ui-utils',
+                    'mlab-db': 'js-data-libs/<%- datalibVersion %>/mlab-db',
+                    'on-demand': 'js-data-libs/<%- datalibVersion %>/on-demand',
+                    'crypto': 'js-data-libs/<%- datalibVersion %>/crypto',
                 },
                 shim: {
                     'sjcl': {
@@ -97,157 +100,123 @@ githubPwdStorageId
                 },
             });
 
-            require(['ui-utils', 'streams', 'gist-db', 'on-demand', 'crypto'], function($, Stream, GistDb, OnDemand, crypto) {
+            require(['ui-utils', 'streams', 'mlab-db', 'on-demand', 'crypto'], function($, Stream, MlabDb, OnDemand, crypto) {
                 var templates = $.extract('template-id'),
-                    githubPwd = OnDemand(sessionStorage, '<%- githubPwdStorageId %>'),
+                    apiKey = OnDemand(localStorage, '<%- mlabApiKeyStorageId %>'),
+                    db = MlabDb({apikey: apiKey(), database: 'misc', collection: 'webviews'}),
                     localKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>'),
-                    dbGistId = OnDemand(localStorage, '<%- dbGistIdStorageId %>'),
-                    data = (function() {
-                        var db = GistDb({gistid: dbGistId(), user: 'ehouais', password: githubPwd()}),
-                            files = {},
-                            selected,
-                            stream = Stream(),
-                            output = stream.output(),
-                            push = function() {
-                                if (!files[selected]) selected = null;
-                                stream.push({
-                                    files: files,
-                                    selected: selected
-                                });
-                            };
-
-                        output.refresh = function() {
-                            db.getAll(function(allFiles) {
-                                files = allFiles;
-                                push();
-                            });
-                        };
-                        output.select = function(filename) {
-                            if (filename != selected && filename in files) {
-                                selected = filename;
-                                push();
-                            }
-                        };
-                        output.create = function(filename) {
-                            db.update(filename, '.', function() {
-                                files[selected = filename] = {content: '.'};
-                                push();
-                            });
-                        }
-                        output.save = function(content) {
-                            db.update(selected, content, function() {
-                                files[selected].content = content;
-                                push();
-                            });
-                        };
-                        output.delete = function() {
-                            db.delete(selected, function() {
-                                delete files[selected];
-                                push();
-                            });
-                        };
-
-                        return output;
-                    })();
+                    current = Stream(),
+                    list = Stream(),
+                    refreshList = function() {
+                        db.get({filter: {id: 1}}, function(docs) {
+                            list.push(docs.map(function(doc) {
+                                return doc.id;
+                            }));
+                            current.push();
+                        });
+                    };
 
                 // "New" button
-                $.UI($.select('button.new'), function(createFile) {
+                $.UI($.select('button.new'), function(createDoc) {
                     this.addEventListener('click', function(e) {
-                        var filename = window.prompt('Enter filename');
-                        if (filename) createFile(filename);
+                        var name = window.prompt('Enter data name');
+                        if (name) createDoc(name, JSON.parse(crypto.cipher(localKey(), '')));
                     });
                 }).activate(
-                    data.create
+                    function(id, text) {
+                        db.create({id: id, value: text}, refreshList);
+                    }
                 );
 
                 // file list
-                $.UI($.select('#list'), function(files, selectFile) {
-                    var list = $.select('.list-group', this);
+                $.UI($.select('#list'), function(list_, selected_, selectDoc) {
+                    var $list = $.select('.list-group', this);
 
-                    files.property('files').map(function(files) {
-                        return files.keySeq();
-                    }).bind($.toNodes(list, $.template(templates['data-uri'], function(filename) {
-                        this.textContent = filename;
-                        this.setAttribute('data-filename', filename);
+                    list_.bind($.toNodes($list, $.template(templates['data-uri'], function(id) {
+                        this.textContent = id;
+                        this.setAttribute('data-filename', id);
                     })));
 
-                    files.bind(function(files) {
-                        var $selected,
-                            filename = files.get('selected');
-
-                        $select = $.select('.selected', list);
-                        // 'selected' class is automatically removed (by Bootstrap ?)
-                        $selected = $.select('[data-filename="'+filename+'"]', list);
+                    selected_.bind(function(id) {
+                        var $current = $.select('.selected', $list);
+                        $current && $current.classList.remove('selected');
+                        var $selected = $.select('[data-filename="'+id+'"]', $list);
                         $selected && $selected.classList.add('selected');
                     });
 
-                    list.addEventListener('click', $.delegate('.file', function(e) {
-                        selectFile(this.getAttribute('data-filename'));
+                    $list.addEventListener('click', $.delegate('.file', function(e) {
+                        selectDoc(this.getAttribute('data-filename'));
                         e.preventDefault();
                     }));
                 }).activate(
-                    data,
-                    data.select
+                    list.output(),
+                    current.output(),
+                    function(id) {
+                        current.push(id);
+                    }
                 );
 
                 // form
-                $.UI($.select('form'), function(model, saveFile, deleteFile, selectFile) {
-                    var plain = model.map(function(data) {
-                            if (data.get('selected')) {
-                                return crypto.decipher(localKey(), data.get('files').get(data.get('selected')).get('content'));
-                            }
-                        }),
-                        $textarea = $.select('textarea[name="value"]', this);
+                $.UI($.select('form'), function(data_, saveDoc, deleteDoc, reset) {
+                    var $hidden = $.select('input[type="hidden"]', this),
+                        $textarea = $.select('textarea[name="value"]', this),
+                        $btns = $.select('.buttons', this);
+                        $update = $.select('.update', $btns),
+                        $reset = $.select('.reset', $btns),
+                        $delete = $.select('.delete', $btns),
+                        updateBtns = function(enabled) {
+                            $update.setAttribute('disabled', 'disabled');
+                            $.toggleAttribute($reset, 'disabled', !enabled && 'disabled');
+                            $.toggleAttribute($delete, 'disabled', !enabled && 'disabled');
+                        },
+                        update = function(data) {
+                            var enabled = data && data.has('text');
+                            $hidden.value = data && data.get('id');
+                            $.toggleAttribute($textarea, 'disabled', !enabled && 'disabled');
+                            $textarea.value = enabled ? data.get('text') : '';
+                            updateBtns(enabled);
+                        };
 
-                    // textarea
-                    plain.bind(function(data) {
-                        var disabled = !(typeof data == 'string');
-                        $.toggleAttribute($textarea, 'disabled', disabled && 'disabled');
-                        $textarea.value = disabled ? '' : data;
+                    update();
+
+                    data_.bind(update);
+
+                    $textarea.addEventListener('input', function() { // TODO: improve dependency to $textarea
+                        $update.removeAttribute('disabled');
                     });
-
-                    // form buttons
-                    $.UI($.select('.buttons', this), function(plain, saveFile, deleteFile, selectFile) {
-                        // buttons
-                        var $update = $.select('.update', this),
-                            $reset = $.select('.reset', this),
-                            $delete = $.select('.delete', this),
-                            updateBtns = function(data) {
-                                $update.setAttribute('disabled', 'disabled');
-                                $.toggleAttribute($reset, 'disabled', !data && 'disabled');
-                                $.toggleAttribute($delete, 'disabled', !data && 'disabled');
-                            };
-
-                        updateBtns();
-
-                        plain.bind(updateBtns);
-
-                        $textarea.addEventListener('input', function() { // TODO: improve dependency to $textarea
-                            $update.removeAttribute('disabled');
+                    $update.addEventListener('click', function(e) {
+                        saveDoc($hidden.value, crypto.cipher(localKey(), $textarea.value), function() {
+                            updateBtns(true);
                         });
-                        $update.addEventListener('click', function(e) {
-                            saveFile(crypto.cipher(localKey(), $textarea.value));
-                        });
-                        $reset.addEventListener('click', function(e) {
-                            selectFile();
-                        });
-                        $delete.addEventListener('click', function(e) {
-                            window.confirm('Are you sure ?') && deleteFile();
-                        });
-                    }).activate(
-                        plain,
-                        saveFile,
-                        deleteFile,
-                        selectFile
-                    );
+                    });
+                    $reset.addEventListener('click', function(e) {
+                        reset();
+                    });
+                    $delete.addEventListener('click', function(e) {
+                        window.confirm('Are you sure ?') && deleteDoc($hidden.value);
+                    });
                 }).activate(
-                    data,
-                    data.save,
-                    data.delete,
-                    data.select
+                    current.output().amap(function(id, cb) {
+                        if (id) {
+                            db.get({query: {"id": id}, unique: true}, function(doc) {
+                                cb({id: id, text: crypto.decipher(localKey(), JSON.stringify(doc.value))});
+                            });
+                        } else {
+                            cb();
+                        }
+                    }),
+                    function(id, text, cb) {
+                        db.update({id: id}, {$set: {value: JSON.parse(text)}}, cb);
+                    },
+                    function(id) {
+                        db.delete({id: id}, refreshList);
+                    },
+                    function() {
+                        current.push();
+                    }
                 );
 
-                data.refresh();
+                refreshList();
             });
         </script>
     </body>

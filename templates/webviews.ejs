@@ -1,18 +1,18 @@
 <%#
-dbGistIdStorageId
+datalibVersion
+mlabApiKeyIdStorageId
 cipherKeyStorageId
-githubPwdStorageId
 %>
 <script src="//cdnjs.cloudflare.com/ajax/libs/require.js/2.3.2/require.min.js"></script>
 <script>
     require.config({
         baseUrl: '/assets',
         paths: {
-            http: 'js-data-libs/v0.6.0/http',
+            http: 'js-data-libs/<%- datalibVersion %>/http',
             sjcl: '//cdnjs.cloudflare.com/ajax/libs/sjcl/1.0.6/sjcl.min',
-            'gist-db': 'js-data-libs/v0.6.0/gist-db',
-            'on-demand': 'js-data-libs/v0.6.0/on-demand',
-            crypto: 'js-data-libs/v0.6.0/crypto'
+            'mlab-db': 'js-data-libs/<%- datalibVersion %>/mlab-db',
+            'on-demand': 'js-data-libs/<%- datalibVersion %>/on-demand',
+            crypto: 'js-data-libs/<%- datalibVersion %>/crypto'
         },
         shim: {sjcl: {exports: 'sjcl'}},
         config: {
@@ -53,10 +53,9 @@ githubPwdStorageId
                 };
             },
             load = function() {
-                require(['gist-db', 'on-demand', 'crypto'], function(GistDb, OnDemand, crypto) {
-                    var githubPwd = OnDemand(sessionStorage, '<%- githubPwdStorageId %>'),
-                        dbGistId = OnDemand(localStorage, '<%- dbGistIdStorageId %>'),
-                        db = GistDb({gistid: dbGistId(), user: 'ehouais', password: githubPwd()}),
+                require(['mlab-db', 'on-demand', 'crypto'], function(MlabDb, OnDemand, crypto) {
+                    var apiKey = OnDemand(localStorage, '<%- mlabApiKeyStorageId %>'),
+                        db = MlabDb({apikey: apiKey(), database: '', collection: ''}),
                         cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
 
                     db.get(id, function(data) {
@@ -65,10 +64,9 @@ githubPwdStorageId
                 });
             },
             save = debounce(function(data) {
-                require(['gist-db', 'on-demand', 'crypto'], function(GistDb, OnDemand, crypto) {
-                    var githubPwd = OnDemand(sessionStorage, '<%- githubPwdStorageId %>'),
-                        dbGistId = OnDemand(localStorage, '<%- dbGistIdStorageId %>'),
-                        db = GistDb({gistid: dbGistId(), user: 'ehouais', password: githubPwd()}),
+                require(['mlab-db', 'on-demand', 'crypto'], function(MlabDb, OnDemand, crypto) {
+                    var apiKey = OnDemand(localStorage, '<%- mlabApiKeyStorageId %>'),
+                        db = MlabDb({apikey: apiKey(), database: '', collection: ''}),
                         cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
 
                     db.update(id, crypto.cipher(cipherKey(), data), function() {

@@ -1,7 +1,8 @@
 <%#
-dbGistIdStorageId
-cipherKeyStorageId
 githubPwdStorageId
+dbGistIdStorageId
+mlabApiKeyStorageId
+cipherKeyStorageId
 %>
 var match,
     str;
@@ -20,6 +21,17 @@ if (match = data.match(/^data:([^,;]+)(;[^,]+)?,(.*)/)) {
         Http.get(uri, function(data) {
             parse(crypto.decipher(cipherKey(), data), update);
         }, true);
+    });
+} else if (match = data.match(/mg\/(.+)/)) {
+    require(['mlab-db', 'on-demand', 'crypto'], function(MlabDb, OnDemand, crypto) {
+        var id = match[1],
+            apiKey = OnDemand(localStorage, '<%- mlabApiKeyStorageId %>'),
+            db = MlabDb({apikey: apiKey(), database: 'misc', collection: 'webviews'}),
+            cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
+
+        db.get({query: {id: id}, unique: true}, function(data) {
+            parse(crypto.decipher(cipherKey(), JSON.stringify(data.value)), update);
+        });
     });
 } else if (match = data.match(/db\/(.+)/)) {
     require(['gist-db', 'on-demand', 'crypto'], function(GistDb, OnDemand, crypto) {
