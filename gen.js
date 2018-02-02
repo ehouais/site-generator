@@ -9,9 +9,6 @@ var siteDir = '../ehouais.github.io';
 var toolsDir = siteDir+'/tools'
 var templatesDir = './templates';
 
-var githubPwdStorageId = 'githubPwd';
-var dbGistIdStorageId = 'dbGistId';
-var mlabApiKeyStorageId = 'mlabApiKey';
 var cipherKeyStorageId = 'cipherKey';
 
 var props = function(obj, cb) {
@@ -22,7 +19,7 @@ var props = function(obj, cb) {
 var cdnjs = function(path) {
         return '//cdnjs.cloudflare.com/ajax/libs'+path;
     };
-var datalibVersion = 'v0.8.0';
+var datalibVersion = 'v0.9.0';
 var datalib = 'js-data-libs/'+datalibVersion;
 var uiutilslibVersion = 'v0.4.2';
 var uiutilslib = 'js-ui-utils/'+uiutilslibVersion;
@@ -64,7 +61,7 @@ var fetchAsset = function(filepath, forceSource) {
     };
 
 // charts
-//fetchAsset('js-data-libs/v0.7.0/mlab-db.js', '../js-data-libs/mlab-db.js');
+//fetchAsset('js-data-libs/'+datalibVersion+'/mlab.js', '../js-data-libs/mlab.js');
 var chartsDir = toolsDir+'/charts';
 var chartTemplate = templatesDir+'/chart.ejs';
 var chartslib = 'charts/v0.3.2';
@@ -76,7 +73,6 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
             d3: cdnjs('/d3/4.2.8/d3.min'),
             leaflet: cdnjs('/leaflet/1.0.3/leaflet'),
             'snap.svg': cdnjs('/snap.svg/0.5.1/snap.svg-min'),
-            tabletop: cdnjs('/tabletop.js/1.5.2/tabletop.min'),
             timescale: chartslib+'/timescale',
             twopassresize: chartslib+'/twopassresize',
             datatable: datalib+'/datatable',
@@ -84,33 +80,33 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
     var charts = {
             diagram: {
                 stylesheets: ['../condensed-font.css'],
-                requirements: ['snap.svg', 'twopassresize', 'tabletop', 'ext_parser'],
+                requirements: ['snap.svg', 'twopassresize', 'ext_parser'],
                 exports: {ext_parser: 'parser'}
             },
             hbars: {
                 stylesheets: ['../condensed-font.css', 'default.css'],
-                requirements: ['d3', 'twopassresize', 'datatable', 'tabletop']
+                requirements: ['d3', 'twopassresize', 'datatable']
             },
             lines: {
                 stylesheets: ['../condensed-font.css', 'default.css'],
-                requirements: ['d3', 'timescale', 'twopassresize', 'datatable', 'tabletop']
+                requirements: ['d3', 'timescale', 'twopassresize', 'datatable']
             },
             map: {
                 stylesheets: ['/leaflet/1.0.3/leaflet.css', 'default.css'],
-                requirements: ['leaflet', 'datatable', 'tabletop']
+                requirements: ['leaflet', 'datatable']
             },
             pie: {
                 stylesheets: ['../condensed-font.css', 'default.css'],
-                requirements: ['d3', 'twopassresize', 'datatable', 'tabletop']
+                requirements: ['d3', 'twopassresize', 'datatable']
             },
             timeline: {
                 stylesheets: ['../condensed-font.css', 'default.css'],
-                requirements: ['d3', 'timescale', 'twopassresize', 'tabletop', 'ext_parser'],
+                requirements: ['d3', 'timescale', 'twopassresize', 'ext_parser'],
                 exports: {ext_parser: 'parser'}
             },
             vbars: {
                 stylesheets: ['../condensed-font.css', 'default.css'],
-                requirements: ['d3', 'twopassresize', 'datatable', 'tabletop']
+                requirements: ['d3', 'twopassresize', 'datatable']
             }
         };
 
@@ -123,12 +119,14 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
                 paths: {
                     http: datalib+'/http',
                     text: cdnjs('/require-text/2.0.12/text.min'),
-                    'gist-db': datalib+'/gist-db',
-                    'mlab-db': datalib+'/mlab-db',
+                    'gist': datalib+'/gist',
+                    'mlab': datalib+'/mlab',
+                    tabletop: cdnjs('/tabletop.js/1.5.2/tabletop.min'),
                     'on-demand': datalib+'/on-demand',
                     crypto: datalib+'/crypto',
                     sjcl: cdnjs('/sjcl/1.0.6/sjcl.min'),
-                    chart: chartslib+'/'+id+'/chart'
+                    chart: chartslib+'/'+id+'/chart',
+                    datasource: datalib+'/datasource'
                 },
                 shim: {
                     sjcl: {
@@ -138,11 +136,12 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
             };
 
         fetchAsset(datalib+'/http.js');
-        fetchAsset(datalib+'/gist-db.js');
-        fetchAsset(datalib+'/mlab-db.js');
+        fetchAsset(datalib+'/gist.js');
+        fetchAsset(datalib+'/mlab.js');
         fetchAsset(datalib+'/on-demand.js');
         fetchAsset(datalib+'/crypto.js');
         fetchAsset(chartslib+'/'+id+'/chart.js');
+        fetchAsset(datalib+'/datasource.js');
 
         (chart.requirements || []).forEach(function(require) {
             var path = libs[require] || chartslib+'/'+id+'/'+require;
@@ -168,9 +167,6 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
         }),
             config: config,
             type: id,
-            githubPwdStorageId: githubPwdStorageId,
-            dbGistIdStorageId: dbGistIdStorageId,
-            mlabApiKeyStorageId: mlabApiKeyStorageId,
             cipherKeyStorageId: cipherKeyStorageId
         });
 
@@ -222,8 +218,7 @@ var webviewslib = 'webviews/v0.5.0';
                 fetchAsset(uiutilslib+'/form.js');
                 ejs.renderFile(templatesDir+'/webviews.ejs', {
                     datalibVersion,
-                    mlabApiKeyStorageId: mlabApiKeyStorageId,
-                    cipherKeyStorageId: cipherKeyStorageId
+                   cipherKeyStorageId: cipherKeyStorageId
                 }, {}, function(err, str) {
                     var url = 'https://raw.githubusercontent.com/ehouais/'+webviewslib+'/'+id+'/index.html';
                     console.log('Fetching "'+url+'"...');
@@ -236,26 +231,6 @@ var webviewslib = 'webviews/v0.5.0';
                         });
                     });
                 });
-            } else if (webview == 'index') {
-                var url = 'https://raw.githubusercontent.com/ehouais/'+webviewslib+'/'+id+'/index.html';
-                console.log('Fetching "'+url+'"...');
-                request(url, function (error, response, body) {
-                    if (error) { console.log(error); return false }
-                    html = body
-                        .replace(/\/cdn(\/[^'"]+)('|")/g, function(match, path, delimiter) {
-                            if (path.indexOf('js-data-libs') != -1 || path.indexOf('js-ui-utils') != -1) {
-                                var mpath = path.replace('/0.', '/v0.')+delimiter;
-                                fetchAsset(mpath);
-                                return mpath;
-                            } else {
-                                return cdnjs(path)+delimiter;
-                            }
-                        });
-                    fs.writeFile(destPath, html, function(err) {
-                        if (err) { console.log(err); return false }
-                        return true;
-                    });
-                });
             } else {
                 var config = {
                         baseUrl: '/assets',
@@ -263,11 +238,12 @@ var webviewslib = 'webviews/v0.5.0';
                             http: datalib+'/http',
                             text: cdnjs('/require-text/2.0.12/text.min'),
                             sjcl: cdnjs('/sjcl/1.0.6/sjcl.min'),
-                            'gist-db': datalib+'/gist-db',
-                            'mlab-db': datalib+'/mlab-db',
+                            'gist': datalib+'/gist',
+                            'mlab': datalib+'/mlab',
                             'on-demand': datalib+'/on-demand',
                             crypto: datalib+'/crypto',
-                            renderer: webviewslib+'/'+id+'/renderer'
+                            renderer: webviewslib+'/'+id+'/renderer',
+                            datasource: datalib+'/datasource'
                         },
                         shim: {
                             sjcl: {
@@ -277,11 +253,12 @@ var webviewslib = 'webviews/v0.5.0';
                     };
 
                 fetchAsset(datalib+'/http.js');
-                fetchAsset(datalib+'/gist-db.js');
-                fetchAsset(datalib+'/mlab-db.js');
+                fetchAsset(datalib+'/gist.js');
+                fetchAsset(datalib+'/mlab.js');
                 fetchAsset(datalib+'/on-demand.js');
                 fetchAsset(datalib+'/crypto.js');
                 fetchAsset(webviewslib+'/'+id+'/renderer.js');
+                fetchAsset(datalib+'/datasource.js');
         
                 (webview.requirements || []).forEach(function(require) {
                     var info = libs[require];
@@ -310,9 +287,6 @@ var webviewslib = 'webviews/v0.5.0';
                     }),
                     config: config,
                     type: id,
-                    githubPwdStorageId: githubPwdStorageId,
-                    dbGistIdStorageId: dbGistIdStorageId,
-                    mlabApiKeyStorageId: mlabApiKeyStorageId,
                     cipherKeyStorageId: cipherKeyStorageId
                 });
 
@@ -404,13 +378,15 @@ var dbTemplate = templatesDir+'/db.ejs';
 var dbFile = toolsDir+'/db.html';
 fetchAsset(datalib+'/observable.js');
 fetchAsset(datalib+'/streams.js');
+fetchAsset(datalib+'/mlab.js');
+fetchAsset(datalib+'/on-demand.js');
+fetchAsset(datalib+'/crypto.js');
 fs.readFile(dbTemplate, 'utf8', function(err, data) {
     console.log('Generating DB app...');
     fs.ensureDirSync(toolsDir);
     fs.writeFile(dbFile, ejs.render(data, {
         datalibVersion,
         uiutilslibVersion,
-        mlabApiKeyStorageId: mlabApiKeyStorageId,
         cipherKeyStorageId: cipherKeyStorageId
     }), function(err) {
         if (err) { console.log(err); return false }

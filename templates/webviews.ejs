@@ -10,7 +10,8 @@ cipherKeyStorageId
         paths: {
             http: 'js-data-libs/<%- datalibVersion %>/http',
             sjcl: '//cdnjs.cloudflare.com/ajax/libs/sjcl/1.0.6/sjcl.min',
-            'mlab-db': 'js-data-libs/<%- datalibVersion %>/mlab-db',
+            'mlab': 'js-data-libs/<%- datalibVersion %>/mlab',
+            'gist': 'js-data-libs/<%- datalibVersion %>/gist',
             'on-demand': 'js-data-libs/<%- datalibVersion %>/on-demand',
             crypto: 'js-data-libs/<%- datalibVersion %>/crypto'
         },
@@ -53,23 +54,31 @@ cipherKeyStorageId
                 };
             },
             load = function() {
-                require(['mlab-db', 'on-demand', 'crypto'], function(MlabDb, OnDemand, crypto) {
-                    var apiKey = OnDemand(localStorage, '<%- mlabApiKeyStorageId %>'),
-                        db = MlabDb({apikey: apiKey(), database: '', collection: ''}),
+                require(['mlab', 'on-demand', 'crypto'], function(Mlab, OnDemand, crypto) {
+                    var db = Mlab('misc', 'webviews'),
                         cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
-
-                    db.get(id, function(data) {
-                        handler(crypto.decipher(cipherKey(), data.content));
+            
+                    db.select({query: {id: id}, unique: true}).then(function(response) {
+                        if (response) {
+                            return response.body();
+                        } else {
+                            return new Promise(function(resolve, reject) {
+                                require(['gist'], function(Gist) {
+                                    Gist().get(id).then(resolve);
+                                });
+                            });
+                        }
+                    }).then(function(data) {
+                        handler(crypto.decipher(cipherKey, data));
                     });
                 });
             },
             save = debounce(function(data) {
-                require(['mlab-db', 'on-demand', 'crypto'], function(MlabDb, OnDemand, crypto) {
-                    var apiKey = OnDemand(localStorage, '<%- mlabApiKeyStorageId %>'),
-                        db = MlabDb({apikey: apiKey(), database: '', collection: ''}),
+                require(['mlab', 'on-demand', 'crypto'], function(Mlab, OnDemand, crypto) {
+                    var db = Mlab('misc', 'webviews'),
                         cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
 
-                    db.update(id, crypto.cipher(cipherKey(), data), function() {
+                    db.update({id: id}, {$set: {value: JSON.parse(crypto.cipher(cipherKey, data))}}).then(function() {
                         console.log('saved.');
                     });
                 });

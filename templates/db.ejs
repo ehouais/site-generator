@@ -2,7 +2,6 @@
 datalibVersion
 uiutilslibVersion
 cipherKeyStorageId
-mlabApiKeyIdStorageId
 %>
 <html>
     <head>
@@ -87,9 +86,8 @@ mlabApiKeyIdStorageId
                     'sjcl': '//cdnjs.cloudflare.com/ajax/libs/sjcl/1.0.6/sjcl.min',
                     'observable': 'js-data-libs/<%- datalibVersion %>/observable',
                     'streams': 'js-data-libs/<%- datalibVersion %>/streams',
-                    'http': 'js-data-libs/<%- datalibVersion %>/http',
                     'ui-utils': 'js-ui-utils/<%- uiutilslibVersion %>/ui-utils',
-                    'mlab-db': 'js-data-libs/<%- datalibVersion %>/mlab-db',
+                    'mlab': 'js-data-libs/<%- datalibVersion %>/mlab',
                     'on-demand': 'js-data-libs/<%- datalibVersion %>/on-demand',
                     'crypto': 'js-data-libs/<%- datalibVersion %>/crypto',
                 },
@@ -100,15 +98,14 @@ mlabApiKeyIdStorageId
                 },
             });
 
-            require(['ui-utils', 'streams', 'mlab-db', 'on-demand', 'crypto'], function($, Stream, MlabDb, OnDemand, crypto) {
+            require(['ui-utils', 'streams', 'mlab', 'on-demand', 'crypto'], function($, Stream, Mlab, OnDemand, crypto) {
                 var templates = $.extract('template-id'),
-                    apiKey = OnDemand(localStorage, '<%- mlabApiKeyStorageId %>'),
-                    db = MlabDb({apikey: apiKey(), database: 'misc', collection: 'webviews'}),
+                    db = Mlab('misc', 'webviews'),
                     localKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>'),
                     current = Stream(),
                     list = Stream(),
                     refreshList = function() {
-                        db.get({filter: {id: 1}}, function(docs) {
+                        db.select({filter: {id: 1}}).then(function(docs) {
                             list.push(docs.map(function(doc) {
                                 return doc.id;
                             }));
@@ -120,11 +117,11 @@ mlabApiKeyIdStorageId
                 $.UI($.select('button.new'), function(createDoc) {
                     this.addEventListener('click', function(e) {
                         var name = window.prompt('Enter data name');
-                        if (name) createDoc(name, JSON.parse(crypto.cipher(localKey(), '')));
+                        if (name) createDoc(name, JSON.parse(crypto.cipher(localKey, '')));
                     });
                 }).activate(
                     function(id, text) {
-                        db.create({id: id, value: text}, refreshList);
+                        db.insert({id: id, value: text}).then(refreshList);
                     }
                 );
 
@@ -185,7 +182,7 @@ mlabApiKeyIdStorageId
                         $update.removeAttribute('disabled');
                     });
                     $update.addEventListener('click', function(e) {
-                        saveDoc($hidden.value, crypto.cipher(localKey(), $textarea.value), function() {
+                        saveDoc($hidden.value, crypto.cipher(localKey, $textarea.value), function() {
                             updateBtns(true);
                         });
                     });
@@ -198,18 +195,18 @@ mlabApiKeyIdStorageId
                 }).activate(
                     current.output().amap(function(id, cb) {
                         if (id) {
-                            db.get({query: {"id": id}, unique: true}, function(doc) {
-                                cb({id: id, text: crypto.decipher(localKey(), JSON.stringify(doc.value))});
+                            db.select({query: {"id": id}, unique: true}).then(function(doc) {
+                                cb({id: id, text: crypto.decipher(localKey, JSON.stringify(doc.value))});
                             });
                         } else {
                             cb();
                         }
                     }),
                     function(id, text, cb) {
-                        db.update({id: id}, {$set: {value: JSON.parse(text)}}, cb);
+                        db.update({id: id}, {$set: {value: JSON.parse(text)}}).then(cb);
                     },
                     function(id) {
-                        db.delete({id: id}, refreshList);
+                        db.delete({id: id}).then(refreshList);
                     },
                     function() {
                         current.push();
