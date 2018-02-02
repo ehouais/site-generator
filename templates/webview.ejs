@@ -2,9 +2,6 @@
 stylesheets
 config
 type
-githubPwdStorageId
-dbGistIdStorageId
-mlabApiKeyIdStorageId
 cipherKeyStorageId
 %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -56,13 +53,18 @@ cipherKeyStorageId
                         cb(str);
 <% } %>
 
-                    },
-                    update = function(data) {
-                        renderer.update(data);
                     };
 
-<%- include templates/datasource %>
-            });
+                    require(['datasource', 'crypto', 'on-demand'], function(datasource, crypto, OnDemand) {
+                        var cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
+    
+                        datasource(data).then(function(str) {
+                            parse(crypto.decipher(cipherKey(), str), function(data) {
+                                renderer.update(data);
+                            });
+                        });
+                    });
+                });
         </script>
     </body>
 </html>
