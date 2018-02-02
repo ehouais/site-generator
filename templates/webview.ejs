@@ -59,7 +59,7 @@ cipherKeyStorageId
                         var cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
     
                         datasource(data).then(function(str) {
-                            parse(crypto.decipher(cipherKey(), str), function(data) {
+                            parse(crypto.decipher(cipherKey, str), function(data) {
                                 renderer.update(data);
                             });
                         });
