@@ -45,32 +45,31 @@ cipherKeyStorageId
 
             require(['chart'], function(Chart) {
                 var chart,
-                    parse = function(str, cb) {
+                    parse = function(str) {
+                        return new Promise(function(resolve, reject) {
 <% if (['vbars', 'hbars', 'pie', 'lines', 'map'].indexOf(type) != -1) { %>
-                        require(['datatable'], function(DataTable) {
-                            var lines = str.split('\n'),
-                                header = lines.shift(),
-                                types = [<% if (type == 'lines') { %>'date'<% } else if (type == 'map') { %>'numeric', 'numeric', 'text'<% } else { %>'text'<% } %>];
+                            require(['datatable'], function(DataTable) {
+                                var lines = str.split('\n'),
+                                    header = lines.shift(),
+                                    types = [<% if (type == 'lines') { %>'date'<% } else if (type == 'map') { %>'numeric', 'numeric', 'text'<% } else { %>'text'<% } %>];
 
-                            cb({
-                                cols: header.split(',').map(function(cell) {
-                                    return {label: cell};
-                                }),
-                                rows: DataTable.dataFromCsv(lines.join('\n'), types)
+                                resolve({
+                                    cols: header.split(',').map(function(cell) {
+                                        return {label: cell};
+                                    }),
+                                    rows: DataTable.dataFromCsv(lines.join('\n'), types)
+                                });
                             });
-                        });
 <% } else if (type == 'diagram' || type == 'timeline') { %>
-                        require(['ext_parser'], function(parser) {
-                            try {
-                                cb(parser.parse(str.replace(/\n|\r/g, '')));
-                            } catch(e) {
-                                console.log('Parser error: '+e.message);
-                            }
-                        });
+                            require(['ext_parser'], function(parser) {
+                                try {
+                                    resolve(parser.parse(str.replace(/\n|\r/g, '')));
+                                } catch(e) {
+                                    reject('Parser error: '+e.message);
+                                }
+                            });
 <% } %>
-                    },
-                    update = function(data) {
-                        chart.update(data);
+                        });
                     },
                     params = {margin: 0.05};
 
@@ -96,11 +95,11 @@ cipherKeyStorageId
 
                 window.addEventListener('resize', chart.resize);
 
-                require(['datasource', 'crypto', 'on-demand'], function(datasource, crypto, OnDemand) {
+                require(['datasource', 'on-demand'], function(datasource, OnDemand) {
                     var cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
 
-                    datasource(data).then(function(str) {
-                        parse(crypto.decipher(cipherKey, str), update);
+                    datasource(data, cipherKey).then(parse).then(function(data) {
+                        chart.update(data);
                     });
                 });
             });

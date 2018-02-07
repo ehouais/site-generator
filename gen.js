@@ -19,7 +19,7 @@ var props = function(obj, cb) {
 var cdnjs = function(path) {
         return '//cdnjs.cloudflare.com/ajax/libs'+path;
     };
-var datalibVersion = 'v0.9.0';
+var datalibVersion = 'v0.10.0';
 var datalib = 'js-data-libs/'+datalibVersion;
 var uiutilslibVersion = 'v0.4.2';
 var uiutilslib = 'js-ui-utils/'+uiutilslibVersion;
@@ -123,7 +123,6 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
                     'mlab': datalib+'/mlab',
                     tabletop: cdnjs('/tabletop.js/1.5.2/tabletop.min'),
                     'on-demand': datalib+'/on-demand',
-                    crypto: datalib+'/crypto',
                     sjcl: cdnjs('/sjcl/1.0.6/sjcl.min'),
                     chart: chartslib+'/'+id+'/chart',
                     datasource: datalib+'/datasource'
@@ -139,7 +138,6 @@ fs.readFile(chartTemplate, 'utf8', function(err, data) {
         fetchAsset(datalib+'/gist.js');
         fetchAsset(datalib+'/mlab.js');
         fetchAsset(datalib+'/on-demand.js');
-        fetchAsset(datalib+'/crypto.js');
         fetchAsset(chartslib+'/'+id+'/chart.js');
         fetchAsset(datalib+'/datasource.js');
 
@@ -241,7 +239,6 @@ var webviewslib = 'webviews/v0.5.0';
                             'gist': datalib+'/gist',
                             'mlab': datalib+'/mlab',
                             'on-demand': datalib+'/on-demand',
-                            crypto: datalib+'/crypto',
                             renderer: webviewslib+'/'+id+'/renderer',
                             datasource: datalib+'/datasource'
                         },
@@ -256,7 +253,6 @@ var webviewslib = 'webviews/v0.5.0';
                 fetchAsset(datalib+'/gist.js');
                 fetchAsset(datalib+'/mlab.js');
                 fetchAsset(datalib+'/on-demand.js');
-                fetchAsset(datalib+'/crypto.js');
                 fetchAsset(webviewslib+'/'+id+'/renderer.js');
                 fetchAsset(datalib+'/datasource.js');
         
@@ -380,7 +376,6 @@ fetchAsset(datalib+'/observable.js');
 fetchAsset(datalib+'/streams.js');
 fetchAsset(datalib+'/mlab.js');
 fetchAsset(datalib+'/on-demand.js');
-fetchAsset(datalib+'/crypto.js');
 fs.readFile(dbTemplate, 'utf8', function(err, data) {
     console.log('Generating DB app...');
     fs.ensureDirSync(toolsDir);

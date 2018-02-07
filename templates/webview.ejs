@@ -52,14 +52,13 @@ cipherKeyStorageId
 <% } else if (type == 'text') { %>
                         cb(str);
 <% } %>
-
                     };
 
-                    require(['datasource', 'crypto', 'on-demand'], function(datasource, crypto, OnDemand) {
+                    require(['datasource', 'on-demand'], function(datasource, OnDemand) {
                         var cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
     
-                        datasource(data).then(function(str) {
-                            parse(crypto.decipher(cipherKey, str), function(data) {
+                        datasource(data, cipherKey).then(function(str) {
+                            parse(str, function(data) {
                                 renderer.update(data);
                             });
                         });
