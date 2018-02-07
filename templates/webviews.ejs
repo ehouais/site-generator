@@ -11,9 +11,7 @@ cipherKeyStorageId
             http: 'js-data-libs/<%- datalibVersion %>/http',
             sjcl: '//cdnjs.cloudflare.com/ajax/libs/sjcl/1.0.6/sjcl.min',
             'mlab': 'js-data-libs/<%- datalibVersion %>/mlab',
-            'gist': 'js-data-libs/<%- datalibVersion %>/gist',
-            'on-demand': 'js-data-libs/<%- datalibVersion %>/on-demand',
-            crypto: 'js-data-libs/<%- datalibVersion %>/crypto'
+            'on-demand': 'js-data-libs/<%- datalibVersion %>/on-demand'
         },
         shim: {sjcl: {exports: 'sjcl'}},
         config: {
@@ -54,31 +52,26 @@ cipherKeyStorageId
                 };
             },
             load = function() {
-                require(['mlab', 'on-demand', 'crypto'], function(Mlab, OnDemand, crypto) {
+                require(['mlab', 'on-demand', 'sjcl'], function(Mlab, OnDemand, sjcl) {
                     var db = Mlab('misc', 'webviews'),
                         cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
             
-                    db.select({query: {id: id}, unique: true}).then(function(response) {
-                        if (response) {
-                            return response.body();
-                        } else {
-                            return new Promise(function(resolve, reject) {
-                                require(['gist'], function(Gist) {
-                                    Gist().get(id).then(resolve);
-                                });
-                            });
+                    db.select({query: {id: id}, unique: true}).then(function(obj) {
+                        try {
+                            // try to decipher data
+                            handler(sjcl.decrypt(cipherKey(), JSON.stringify(obj.value)));
+                        } catch(e) {
+                            console.error('Invalid key or corrupt cipher text');
                         }
-                    }).then(function(data) {
-                        handler(crypto.decipher(cipherKey, data));
                     });
                 });
             },
             save = debounce(function(data) {
-                require(['mlab', 'on-demand', 'crypto'], function(Mlab, OnDemand, crypto) {
+                require(['mlab', 'on-demand', 'sjcl'], function(Mlab, OnDemand, sjcl) {
                     var db = Mlab('misc', 'webviews'),
                         cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
 
-                    db.update({id: id}, {$set: {value: JSON.parse(crypto.cipher(cipherKey, data))}}).then(function() {
+                    db.update({id: id}, {$set: {value: JSON.parse(sjcl.encrypt(cipherKey(), data, {ks: 256}))}}).then(function() {
                         console.log('saved.');
                     });
                 });
