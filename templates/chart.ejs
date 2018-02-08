@@ -111,7 +111,7 @@ cipherKeyStorageId
                                         year;
 
                                     if (typeof value == 'string') {
-                                        if (match = val.match(/(\d\d)\/(\d\d)\/(\d\d|\d\d\d\d)/)) {
+                                        if (match = val.match(/(\d\d)\/(\d\d)\/(\d\d\d\d|\d\d)/)) {
                                             year = +match[3];
                                             if (year < 100) year += 2000;
                                             return new Date(year+'-'+match[2]+'-'+match[1]);
