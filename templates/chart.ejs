@@ -100,6 +100,31 @@ cipherKeyStorageId
 
                     datasource(data, cipherKey).then(function(data) {
                         return typeof data == 'string' ? parse(data) : data;
+<% if (['vbars', 'hbars', 'pie', 'lines', 'map'].indexOf(type) != -1) { %>
+                    }).then(function(data) {
+                        return {
+                            cols: data.cols,
+                            rows: data.rows.map(function(row) {
+                                return row.map(function(value) {
+                                    var val = value,
+                                        match,
+                                        year;
+
+                                    if (typeof value == 'string') {
+                                        if (match = val.match(/(\d\d)\/(\d\d)\/(\d\d|\d\d\d\d)/)) {
+                                            year = match[3];
+                                            if (year < 100) year += 2000;
+                                            return new Date(year+'-'+match[2]+'-'+match[1]);
+                                        }
+                                        if (!isNaN(val)) return +val;
+                                        val = val.replace(',', '.');
+                                        if (!isNaN(val)) return +val;
+                                    }
+                                    return value;
+                                })
+                            })
+                        }
+<% } -%>
                     }).then(function(data) {
                         chart.update(data);
                     });
