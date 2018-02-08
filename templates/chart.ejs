@@ -98,7 +98,9 @@ cipherKeyStorageId
                 require(['datasource', 'on-demand'], function(datasource, OnDemand) {
                     var cipherKey = OnDemand(sessionStorage, '<%- cipherKeyStorageId %>');
 
-                    datasource(data, cipherKey).then(parse).then(function(data) {
+                    datasource(data, cipherKey).then(function(data) {
+                        return typeof data == 'string' ? parse(data) : data;
+                    }).then(function(data) {
                         chart.update(data);
                     });
                 });
